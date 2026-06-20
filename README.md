@@ -124,6 +124,24 @@ O dataset “Individual Household Electric Power Consumption” da UCI Machine L
 
 Em conjunto com o dataset residencial da UCI Machine Learning, também temos o industrial “Steel Industry Energy Consumption” que contém parâmetros como Data e Horário da medição, Consumo de Energia (kWh), Potência reativa atrasada, Potência reativa adiantada, Emissão estimada de CO₂, Fator de Potência atrasado, Fator de Potência adiantado, Segundos após meia-noite, Dia útil ou final de semana, Dia da semana e Tipo de carga elétrica. Dados desse dataset possibilitam identificar padrões de consumo industrial, períodos de maior demanda, variações de carga elétrica e indicadores relacionados à eficiência energética, também possibilitando fazer o monitoramento do consumo e previsões de demandas futuras.
 
+# Frente 2: Base Regulatória e Técnica
+
+No âmbito regulatório, temos a Resolução Normativa ANEEL nº 1000/2021, que consolidou e incorporou regras importantes que afetam diretamente o mercado de carros elétricos e paineis solares.
+
+À luz da resolução, está definido que qualquer pessoa ou empresa poderá instalar as estações de recarga para carros elétricos, além de poderem cobrar pelo serviço e o preço sobre recarga poder ser livremente negociado. Um outro ponto positivo é não ser necessário que uma distribuidora opere tais pontos de recarga, o que abre espaço para um mercado competitivo de distribuição.
+
+Com a ANEEL instituindo regras e dando espaço para construção de um mercado competitivo sobre os carros elétricos, temos uma construção de um espaço seguro para o setor se desenvolver. O mercado competitivo em um setor em desenvolvimento, diminui possibilidades de criação de lobbys para estações de recargas, e faz com que mais pessoas busquem pelos carros elétricos. A norma também autoriza a construção de postos de recarga com capacidade de obter lucros, ou até mesmo como serviço de um outro estabelecimento que não esteja no ramo, com isso, empreendimentos como postos de combustível, shoppings, estacionamentos, condomínios e empresas privadas podem se aproveitar das estações de recarga para obter lucros, ou até mesmo para atrais mais pessoas.
+
+Um outro ponto que a norma regula é a proibição do Vehicle-to-Grid, de utilizar a bateria do carro como uma forma de utilizar em outros locais, ou até mesmo comercializar essa energia. O veículo não pode gerar créditos de energia.
+
+Além do mercado de carregadores de carros elétricos, a norma também regula sobre estações de geração solar. Diante disso, no espaço atual, é possível usarmos a geração solar de um ambiente para realizar recargas nos carros elétricos, o que potencializa os serviços prestados pela GoodWe, oferecendo carregadores elétricos e também painéis de geração solar.
+
+
+
+
+# Frente 3: Arquitetura e IA
+
+
 # Conclusão
 
 A análise dos dados públicos demonstrou que o mercado de veículos elétricos no Brasil vem apresentando crescimento acelerado nos últimos anos, impulsionado por fatores como a evolução tecnológica dos veículos, ampliação da oferta de modelos e redução dos custos de utilização. Paralelamente, a infraestrutura de recarga também tem crescido de forma significativa, embora ainda exista uma distribuição desigual dos eletropostos entre os estados brasileiros.
