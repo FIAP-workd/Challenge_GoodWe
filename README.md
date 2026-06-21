@@ -136,7 +136,147 @@ Um outro ponto que a norma regula é a proibição do Vehicle-to-Grid, de utiliz
 
 Além do mercado de carregadores de carros elétricos, a norma também regula sobre estações de geração solar. Diante disso, no espaço atual, é possível usarmos a geração solar de um ambiente para realizar recargas nos carros elétricos, o que potencializa os serviços prestados pela GoodWe, oferecendo carregadores elétricos e também painéis de geração solar.
 
+Diante das mudanças da regulação, os fabricantes de carregadores conseguem se aproveitar de algumas frentes do mercado, e com base nisso, os carregadores da GoodWe da linha HCA conseguem ganhar o mercado com boas soluções. 
 
+A linha de EV Charger HCA apresentam conexões RS-485, LAN e Wi-fi, além de possuírem conexões via Bluetooth e RFID. Cada conexão pode ser explorada para conseguirmos explorar diferentes pontos diante do projeto do EV ChargeOPS. 
+
+## RS-485
+
+A interface RS-485 é um padrão de comunicação serial utilizado principalmente em sistemas industriais e de automação. Seu uso em sistemas industriais vem pela sua robustem e capacidade de operar em ambientes sujeitos a ruídos elétricos. Normalmente, essa interface de comunicação se utiliza do protocolo Modbus RTU, que permite a leitura dos registradores do carregador.
+
+### Possíveis uso no projeto:
+
+* Leitura da potencia;
+* Monitoramento de tensão;
+* Monitoramento de corrente;
+* Registro de energia consumida por sessão;
+* Captura do estado do EV Charge;
+* Integração local independente de uso de APIs;
+
+Essa interface de comunicação, nos libera utilizar de outros módulos como os inversores, e gerarmos também um uso que não seja dependente do uso da internet, podendo servir como contingência para perda de conexão, e mantermos o sistema funcional.
+
+## LAN (Ethernet)
+
+Essa interface permite que o carregador seja conectado diretamente a internet se utilizando de cabo, esse método libera o acesso as soluções em nuvens e utilizando de APIs. Quando comparamos com outras soluções sem fio, o uso do LAN apresenta menor volatilidade, maior velocidade, e está menos suscetível a interferências.
+
+### Possíveis usos no projeto:
+
+* Comunicação com servidores locais;
+* Envio de dados para APIs;
+* Monitoramento contínuo das sessões de recarga;
+* Integração com sistemas de gestão e dashboards.
+
+## Wi-Fi
+
+O uso da interface wi-fi possui compatibilidade direta com o uso da interface por LAN, entretanto, em alguns casos pode ser preferívei o uso da interface de Wi-fi. Comparada ao sistema LAN, temos no Wi-fi uma facilidade de instalação e um custo menor de infraestrutura, podendo ser colocado em pontos específicos de um estacionamento, ou de outros locais, onde seja necessário apenas o acesso a uma rede de Wi-fi do condomínio, sem ser preciso cabear um acesso para o local desejado.
+
+### Possíveis usos no projeto:
+
+Mesmos uso da interface LAN.
+
+## Bluetooth
+
+A interface Bluetooth necessita de uma proximidade para funcionamento completo, podendo ser destinada a configurações iniciais e manutenção do equipamento. Por necessitar de uma proximidade para funcionamento, o seu é de comunicação local, por meio de aplicativos móveis. Suas vantagens são facilidade de configuração, rápida comunicação em curtas distâncias e não ser necessário um acesso a uma rede de internet.
+
+### Possíveis usos no projeto:
+
+* Configuração do carregador;
+* Diagnóstico local;
+* Atualização de parâmetros;
+* Comissionamento do equipamento.
+
+## RFID
+
+A interface de RFID suporta autenticação por RFID, dessa forma, conseguimos atribuir um cartão para cada usuário específico, permitindo sempre associar uma sessão de carregamento a um usuário específico. Suas principais vantagens são facilidade de utilização, segurança e rastreabilidade das sessões. Além disso, é permitido também utilizar em aplicativos móveis dos módulos de NFC dos smartphones para fazer tal associação.
+
+### Possíveis usos no projeto:
+
+* Identificação do usuário;
+* Controle de acesso;
+* Registro das sessões;
+* Cálculo individual do consumo;
+* Geração de faturamento por unidade.
+
+# Opção B: Exploração da API da GoodWe
+    
+A GoodWe disponibiliza uma plataforma em nuvem chamada SEMS Portal (Smart Energy Management System), responsável pelo monitoramento dos equipamentos instalados.
+
+A comunicação é realizada através de APIs baseadas em HTTPS, permitindo que aplicações externas tenham acesso às informações dos dispositivos.
+
+## Dados disponibilizados pela API
+
+Entre os principais dados que podem ser obtidos estão:
+
+### Status do carregador
+
+Permite identificar o estado atual do equipamento:
+
+* Offline;
+* Disponível;
+* Veículo conectado;
+* Carregando;
+* Erro.
+
+---
+
+### Potência Instantânea
+
+Representa a potência fornecida ao veículo em tempo real.
+
+Exemplo:
+
+```json
+{
+    "power": 7.2
+}
+```
+
+Unidade:
+
+* kW
+
+---
+
+### Energia Entregue
+
+Quantidade total de energia fornecida durante uma sessão ou acumulada ao longo do tempo.
+
+Exemplo:
+
+```json
+{
+    "energyToday": 14.6,
+    "energyTotal": 3284.2
+}
+```
+
+Unidade:
+
+* kWh
+
+---
+
+### Dados Elétricos
+
+A API pode disponibilizar:
+
+* Tensão (V);
+* Corrente (A);
+* Frequência (Hz);
+* Temperatura do equipamento.
+
+---
+
+### Eventos da Sessão
+
+Os eventos permitem reconstruir todo o processo de carregamento:
+
+* Início da sessão;
+* Encerramento da sessão;
+* Interrupções;
+* Alarmes;
+* Tempo total de carregamento;
+* Energia consumida.
 
 
 # Frente 3: Arquitetura e IA
