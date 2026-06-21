@@ -278,7 +278,6 @@ Os eventos permitem reconstruir todo o processo de carregamento:
 * Tempo total de carregamento;
 * Energia consumida.
 
-
 # Frente 3: Arquitetura e IA
 
 
