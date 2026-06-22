@@ -280,6 +280,747 @@ Os eventos permitem reconstruir todo o processo de carregamento:
 
 # Frente 3: Arquitetura e IA
 
+![](images/camadas_plataforma.png)
+
+A plataforma **EV ChargeOPS** é concebida para transformar sessões de recarga em informações estruturadas, permitindo o monitoramento do carregamento, e dando insights de inteligência operacional para gestores e usuários do sistema de recarga oferecido pela GoodWe.
+
+A arquitetura da solução passa por alguns níveis de camada física, camada de conectividade, camada de aplicação e de apresentação.
+
+## Camada Física
+
+A camada física corresponde aos equipamentos responsáveis pela entrega de energia, sendo eles:
+
+1. Carregador GoodWe Linha HCA;
+2. Medidores de energia;
+3. Cartões RFID para autenticação dos usuários e/ou
+4. Aplicativos de aparelhos móveis para autenticação de usuários (Uso de NFC).
+   
+## Camada de conectividade
+
+Responsável pela comunicação entre dispositivos e sistemas de software. Nessa camada usaremos de todas as interfaces descritas na frente 2, e também da API do SEMS Portal, onde conseguiremos fazer o input das informações e também coletar.
+
+Essa camada é responsável por transporte das informações, passando informações do Carregador para o portal ou um Gateway local. No nosso projeto, teremos duas frentes de conexão, sendo uma primeira tentativa de uso direto das informações pela API, e caso tenha alguma inconsistência com a API, usaremos de um armazenamento local, e no momento de uma reconexão, haverá uma sincronia de dados com os dados da API.
+
+## Camada de aplicação.
+
+Essa camada é o que define o processamento dos dados e as regras de negócio existentes na plataforma. Aqui estará todos os pontos do BackEnd, todas as comunicações com API, e com o Banco de Dados.
+
+Outro ponto relevante dentro dessa camada é a construção de um motor de rateio, onde será definido as regras para fazer a divisão dos valores com base no consumo mensal de cada usuário.
+
+Além disso, nessa camada ficará também um outro ponto relevante no projeto que é a camada de uso de IA, onde conseguiremos usufruir dos dados existentes no banco para gerarmos insights com uso da Inteligência Artificial.
+
+## Camada de apresentação.
+
+Aqui é onde faremos todos os pontos de interação do usuário com a parte de aplicação. Nessa camada teremos um site onde os gestores de cada ponto terão soluções e um aplicativo/site onde os clientes finais terão visualizações sobre seus consumos durante o período.
+
+Nessa camada temos que ter algumas separações importantes no nível de consumidor. Teremos o cliente que é o usuário final, que é a pessoa que executa a recarga do seu veículo, e também o gestor, que é o usuário do sistema, que gerencia o sistema, frente ao comércio cliente. Em caso de um condomínio, seria o sistema onde o síndico teria controle. Ambas distinções seria apenas de nomes para separar os dois níveis de clientes.
+
+## Modelo de Rateio proposto
+
+No EV ChargeOPS, o valor a ser pago será baseado no consumo individual em kWh. Cada sessão será associada a um usuário utilizando de estrutura RFID, essa estrutura salvará no gateway da base um sistema onde salvaremos em uma tabela fato da sessão gerada, e no final, teremos uma visualização por cliente com base nas sessões obtidas nessa tabela fato de sessões.
+
+Outro ponto também para se pensar sobre o modelo de rateio, é que alguns custos podem ser adicionados de forma fixa no final da fatura, como uma taxa de administração e custos operacionais, podendo ser definido em configuração se será utilizado como taxa fixa, ou valor percentual a ser condicionado sobre as sessões.
+
+## Arquitetura completa e fluxo de dados
+
+![](images/arquitetura_completa.png)
+
+Nessa estrutura, temos que os dados são gerados nas camadas físicas, (EV Charger e RFID), sem tratamentos, apenas estruturando os dados, eles vão ser adicionados no backend pelas camadas de conectividade. No final, as camadas de apresentação serão responsáveis de acessar esse backend e gerar o que será visualizado no final das contas.
+
+Uma parte dessa camada de apresentação que está descrita é sobre uso de Inteligência Artificial. 
+
+## Papel da Inteligência artificial.
+Previsão de Consumo
+
+### Problema
+
+Antecipar a demanda futura.
+
+### Técnica
+
+Regressão.
+
+### Dados necessários
+
+* Histórico de sessões;
+* Horários;
+* Consumo mensal.
+
+### Impacto esperado
+
+* Planejamento da infraestrutura;
+* Redução de picos de demanda.
+
+---
+
+## Clusterização de Usuários
+
+### Problema
+
+Identificar perfis de utilização.
+
+### Técnica
+
+K-Means.
+
+### Dados necessários
+
+* Frequência de carregamento;
+* Horários de utilização;
+* Energia consumida.
+
+### Impacto esperado
+
+* Criação de perfis de usuários;
+* Planejamento de expansão da infraestrutura.
+
+---
+
+## Detecção de Anomalias
+
+### Problema
+
+Identificar comportamentos fora do padrão.
+
+### Técnica
+
+Isolation Forest.
+
+### Dados necessários
+
+* Potência;
+* Corrente;
+* Duração da sessão.
+
+### Impacto esperado
+
+* Identificação de falhas;
+* Detecção de uso indevido.
+
+---
+
+## Interface Conversacional
+
+### Problema
+
+Facilitar a interação com o sistema.
+
+### Técnica
+
+NLP (Processamento de Linguagem Natural).
+
+### Impacto esperado
+
+Permitir consultas como:
+
+> "Quanto consumi este mês?"
+
+ou
+
+> "Qual foi minha última sessão de carregamento?"
+
+## Esquema de base de Dados (modelo conceitual)
+
+![alt text](images/modelo_conceitual.png)
+
+O desenho acima mostra como as tabelas do banco de dados se comunicarão ao longo da base de dados da plataforma EV ChargeOps, cada tabela representa uma entidade e suas colunas são atributos. Além disso, os principais relacionamentos estão associados ao longo da estrutura.
+
+---
+
+## Tabela `usuarios`
+
+A tabela `usuarios` é responsável por armazenar os dados cadastrais das pessoas que utilizam o sistema.
+
+### Objetivo
+
+Associar cada sessão de carregamento a um usuário específico.
+
+### Principais informações
+
+* Nome;
+* E-mail;
+* Telefone;
+* Identificador RFID;
+* Data de cadastro;
+* Status de ativação.
+
+### Utilização
+
+Essa tabela permite identificar quem realizou determinada sessão e quem deverá receber a cobrança correspondente.
+
+---
+
+## Tabela `unidades`
+
+A tabela `unidades` representa a unidade física vinculada ao usuário.
+
+### Objetivo
+
+Permitir a associação entre usuários e apartamentos, salas ou vagas de garagem.
+
+### Principais informações
+
+* Bloco;
+* Apartamento;
+* Pavimento;
+* Observações.
+
+### Utilização
+
+É utilizada para consolidar o consumo por unidade e gerar faturas agrupadas quando necessário.
+
+---
+
+## Tabela `veiculos`
+
+Armazena os veículos cadastrados pelos usuários.
+
+### Objetivo
+
+Controlar quais veículos podem utilizar os carregadores da infraestrutura.
+
+### Principais informações
+
+* Marca;
+* Modelo;
+* Placa;
+* Ano;
+* Usuário proprietário.
+
+### Utilização
+
+Permite identificar qual veículo foi carregado em cada sessão.
+
+---
+
+## Tabela `carregadores`
+
+Representa os carregadores disponíveis na infraestrutura.
+
+### Objetivo
+
+Controlar os equipamentos instalados.
+
+### Principais informações
+
+* Modelo do carregador;
+* Número de série;
+* Localização;
+* Status do equipamento;
+* Potência máxima;
+* Versão do firmware.
+
+### Utilização
+
+Permite monitorar os carregadores e relacionar cada sessão ao equipamento utilizado.
+
+---
+
+## Tabela `sessoes`
+
+A tabela `sessoes` representa cada processo de carregamento realizado.
+
+### Objetivo
+
+Registrar todas as sessões executadas pelos usuários.
+
+### Principais informações
+
+* Horário de início;
+* Horário de término;
+* Duração da sessão;
+* Energia consumida;
+* Status da sessão;
+* Motivo do encerramento.
+
+### Utilização
+
+É uma das principais tabelas do sistema, servindo como referência para medições, eventos e faturamento.
+
+---
+
+## Tabela `medicoes`
+
+Armazena os dados elétricos coletados durante a sessão.
+
+### Objetivo
+
+Registrar medições em tempo real.
+
+### Principais informações
+
+* Potência instantânea;
+* Corrente;
+* Tensão;
+* Frequência;
+* Temperatura;
+* Fator de potência.
+
+### Utilização
+
+Esses dados podem ser utilizados para monitoramento, detecção de falhas e análises futuras.
+
+---
+
+## Tabela `eventos`
+
+A tabela `eventos` funciona como um log do sistema.
+
+### Objetivo
+
+Registrar todos os acontecimentos relevantes relacionados às sessões e aos equipamentos.
+
+### Exemplos de eventos
+
+* Início da sessão;
+* Encerramento da sessão;
+* Pausa do carregamento;
+* Retomada da sessão;
+* Alarmes;
+* Falhas;
+* Atualizações do sistema.
+
+### Utilização
+
+Permite auditoria, rastreabilidade e suporte operacional.
+
+---
+
+## Tabela `tarifas`
+
+Armazena as regras tarifárias utilizadas no cálculo do consumo.
+
+### Objetivo
+
+Manter o histórico dos valores de energia.
+
+### Principais informações
+
+* Valor do kWh;
+* Período de vigência;
+* Status da tarifa.
+
+### Utilização
+
+Permite recalcular valores históricos e aplicar diferentes tarifas ao longo do tempo.
+
+---
+
+## Tabela `regras_rateio`
+
+Armazena as regras utilizadas pelo motor de rateio.
+
+### Objetivo
+
+Controlar os critérios de cobrança.
+
+### Principais informações
+
+* Tipo de tarifa;
+* Valor fixo;
+* Percentual de taxa administrativa;
+* Vigência.
+
+### Utilização
+
+Permite alterar a política de cobrança sem necessidade de modificar o sistema.
+
+---
+
+## Tabela `faturas`
+
+Responsável pela geração financeira das cobranças.
+
+### Objetivo
+
+Consolidar os valores devidos pelos usuários.
+
+### Principais informações
+
+* Referência mensal;
+* Energia total consumida;
+* Valor da energia;
+* Taxa administrativa;
+* Valor final;
+* Status do pagamento;
+* Data de vencimento.
+
+### Utilização
+
+É a tabela utilizada para disponibilizar as cobranças aos usuários.
+
+---
+
+## Tabela Fato `fato_uso_cargas`
+
+A tabela `fato_uso_cargas` é a principal estrutura analítica do sistema.
+
+### Objetivo
+
+Consolidar informações de consumo para análises, indicadores e relatórios.
+
+### Granularidade
+
+Cada registro representa o consumo de uma unidade em um determinado instante de tempo.
+
+### Principais informações
+
+* Timestamp;
+* Unidade;
+* Usuário;
+* Carregador utilizado;
+* Energia consumida;
+* Potência média;
+* Custo estimado;
+* Tarifa aplicada.
+
+### Utilização
+
+Essa tabela é utilizada para:
+
+* Dashboards gerenciais;
+* Indicadores de utilização;
+* Cálculo de custos;
+* Relatórios históricos;
+* Modelos de Inteligência Artificial;
+* Previsão de demanda;
+* Detecção de anomalias.
+
+Por ser uma tabela fato, ela concentra as principais métricas do sistema e serve como base para análises operacionais e estratégicas.
+
+---
+
+
+# Plano para sprint 02.
+
+Desenvolver uma plataforma capaz de registrar sessões de recarga, criarmos novos pontos de condomínio e registro de usuários.
+
+## Fase 1. Implementação da Base de Dados.
+
+### Objetivo
+
+Construir o banco de dados definido na Sprint 01.
+
+### Entregáveis
+
+#### Tabelas dimensionais
+
+* usuarios
+* unidades
+* veiculos
+* carregadores
+
+#### Tabelas operacionais
+
+* sessoes
+* medicoes
+* eventos
+
+#### Tabelas financeiras
+
+* tarifas
+* regras_rateio
+* faturas
+
+#### Tabela fato
+
+* fato_uso_cargas
+
+## Fase 2 — Simulação e Coleta de Dados
+
+### Objetivo
+
+Obter ou simular dados do carregador GoodWe HCA G2.
+
+### Entregáveis
+
+### Simulador de carregador
+
+Variáveis:
+
+* Potência;
+* Corrente;
+* Tensão;
+* Energia;
+* Status;
+* Eventos.
+
+### Integração
+
+* API GoodWe (SEMS);
+  ou
+* RS485 + Modbus.
+
+
+---
+
+## Fase 3 — Backend
+
+### Objetivo
+
+Criar os serviços responsáveis pelo processamento dos dados.
+
+### Entregáveis
+
+#### APIs
+
+##### Usuários
+
+```text
+POST /usuarios
+GET /usuarios
+```
+
+##### Sessões
+
+```text
+POST /sessao
+GET /sessao
+```
+
+##### Faturas
+
+```text
+GET /faturas
+```
+
+##### Dashboard
+
+```text
+GET /metricas
+```
+
+---
+
+## Fase 4 — Motor de Rateio
+
+### Objetivo
+
+Calcular automaticamente o custo individual.
+
+### Entradas
+
+* Energia consumida;
+* Tarifa vigente;
+* Taxa administrativa.
+
+### Fórmula
+
+```text
+Valor final =
+(Energia consumida × Tarifa do kWh)
++
+Taxa administrativa
+```
+
+### Casos especiais
+
+#### Sessão interrompida
+
+Cobrança apenas da energia efetivamente entregue.
+
+#### Usuário sem utilização
+
+Sem cobrança.
+
+#### Dois veículos na mesma unidade
+
+Agrupamento na mesma fatura.
+
+### Entregáveis
+
+* Serviço de cálculo;
+* Geração de faturas.
+
+---
+
+## Fase 5 — Dashboard
+
+### Objetivo
+
+Criar visualizações para usuários e gestores.
+
+### Usuário
+
+* Histórico de sessões;
+* Consumo mensal;
+* Custos;
+* Faturas.
+
+### Gestor
+
+* Ocupação dos carregadores;
+* Consumo total;
+* Receita;
+* Alertas.
+
+
+---
+
+## Fase 6 — Inteligência Artificial
+
+### Objetivo
+
+Adicionar recursos inteligentes à plataforma.
+
+---
+
+### Detecção de Anomalias
+
+#### Técnica
+
+Isolation Forest
+
+#### Entradas
+
+* Potência;
+* Corrente;
+* Duração da sessão.
+
+#### Saída
+
+Identificação de:
+
+* Falhas;
+* Comportamentos anormais;
+* Picos de consumo.
+
+---
+
+### Previsão de Consumo
+
+#### Técnica
+
+Regressão
+
+#### Entradas
+
+* Histórico de sessões;
+* Consumo mensal.
+
+#### Saída
+
+Estimativa de demanda futura.
+
+---
+
+### Clusterização
+
+#### Técnica
+
+K-Means
+
+#### Objetivo
+
+Classificar usuários em perfis:
+
+* Baixo consumo;
+* Médio consumo;
+* Alto consumo.
+
+---
+
+### Chatbot
+
+#### Técnica
+
+LLM + RAG
+
+---
+
+## Fase 7 — Testes
+
+### Testes unitários
+
+* APIs;
+* Banco de dados;
+* Motor de rateio.
+
+### Testes de integração
+
+* Simulador → Banco;
+* Backend → Dashboard;
+* IA → Dashboard.
+
+---
+
+## Fase 8 — Deploy
+
+### Backend
+
+* Render
+
+ou
+
+* Railway
+
+### Banco
+
+* PostgreSQL
+
+
+---
+
+## Fase 9 — Vídeo Pitch
+
+### Demonstração
+
+#### Cenário
+
+Usuário chega ao carregador.
+
+↓
+
+Autenticação via RFID.
+
+↓
+
+Sessão é criada.
+
+↓
+
+Consumo é registrado.
+
+↓
+
+Motor de rateio calcula os custos.
+
+↓
+
+Dashboard exibe resultados.
+
+↓
+
+IA detecta padrões e gera insights.
+
+↓
+
+Fatura é emitida.
+
+---
+
+## Arquitetura Final
+
+```text
+GoodWe HCA G2
+        ↓
+RS485 / API SEMS
+        ↓
+FastAPI
+        ↓
+PostgreSQL
+        ↓
+Motor de Rateio
+        ↓
+Modelos de IA
+        ↓
+Streamlit
+        ↓
+Usuário / Gestor
+```
+
+Ao final da Sprint 02, o EV ChargeOps deverá ser capaz de transformar sessões de carregamento em dados estruturados, gerar cobranças individualizadas e fornecer inteligência operacional para gestores e usuários.
+
 
 # Conclusão
 
