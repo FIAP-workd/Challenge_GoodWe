@@ -1,6 +1,6 @@
 # Challenge_GoodWe
 ### Participantes
- Nome | RM 
+Nome | RM
 ---|--
 Luis Gustavo Ribeiro Andrade | 569147
 João Victor Viana Feitosa | 573217
