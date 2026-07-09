@@ -4,3 +4,7 @@ tmp/*
 node_modules/
 
 .env
+
+# Supabase
+supabase/.branches
+supabase/.temp
