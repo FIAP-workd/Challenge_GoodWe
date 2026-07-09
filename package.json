@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "db:migrate": "supabase migration up",
+    "db:reset": "supabase db reset",
+    "db:migration:new": "supabase migration new"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.3.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.109.1"
+  }
+}
