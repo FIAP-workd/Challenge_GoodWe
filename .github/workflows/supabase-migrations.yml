@@ -24,9 +24,9 @@ jobs:
 
       - name: Verificar secrets
         run: |
-          echo "TOKEN=${SUPABASE_ACCESS_TOKEN:+OK}"
-          echo "DB_PASSWORD=${SUPABASE_DB_PASSWORD:+OK}"
-          echo "PROJECT_ID=${SUPABASE_PROJECT_ID:+OK}"
+          echo "TOKEN=${secrets.SUPABASE_ACCESS_TOKEN:+OK}"
+          echo "DB_PASSWORD=${secrets.SUPABASE_DB_PASSWORD:+OK}"
+          echo "PROJECT_ID=${secrets.SUPABASE_PROJECT_ID:+OK}"
 
       - uses: supabase/setup-cli@v1
         with:
