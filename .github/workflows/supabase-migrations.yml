@@ -10,6 +10,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  deploy:
+      environment: production
+  
   migrate:
     runs-on: ubuntu-latest
 
@@ -20,6 +23,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verificar secrets
+        run: |
+          echo "TOKEN=${SUPABASE_ACCESS_TOKEN:+OK}"
+          echo "DB_PASSWORD=${SUPABASE_DB_PASSWORD:+OK}"
+          echo "PROJECT_ID=${SUPABASE_PROJECT_ID:+OK}"
 
       - uses: supabase/setup-cli@v1
         with:
