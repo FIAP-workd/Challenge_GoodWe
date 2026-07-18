@@ -35,7 +35,7 @@ create table if not exists public.usuarios (
   unidade_id uuid references public.unidades (unidade_id) on update cascade on delete set null,
   nome varchar(150) not null,
   email varchar(255) not null unique,
-  senha, --qual o melhor tipo definido aqui utilizando salt?
+  senha varchar(255), --qual o melhor tipo definido aqui utilizando salt?
   telefone varchar(30),
   rfid_uid varchar(100) unique,
   data_cadastro timestamptz not null default now(),
