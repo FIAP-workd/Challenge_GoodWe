@@ -27,10 +27,21 @@ function throwDatabaseError(error: unknown): never {
     details?: string;
   };
   const message = databaseError.message ?? "Erro desconhecido no banco de dados.";
+  const lowerMessage = message.toLowerCase();
+
+  if (
+    lowerMessage.includes("failed to fetch") ||
+    lowerMessage.includes("networkerror") ||
+    lowerMessage.includes("load failed")
+  ) {
+    throw new Error(
+      "Não foi possível conectar ao Supabase. Verifique a internet, VITE_SUPABASE_URL e se o projeto está ativo.",
+    );
+  }
 
   if (
     databaseError.code === "42501" ||
-    message.toLowerCase().includes("row-level security")
+    lowerMessage.includes("row-level security")
   ) {
     throw new Error(
       "Operação bloqueada pelas políticas de acesso (RLS). Solicite o ajuste à equipe responsável pelo banco de dados.",

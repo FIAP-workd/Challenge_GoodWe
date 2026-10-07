@@ -108,3 +108,66 @@ Este frontend não implementa login, Supabase Auth, credenciais, RFID, sessões
 de recarga, medições, eventos, simulação de carregador, OCPP, rateio, faturas,
 pagamentos, analytics, APIs próprias, Edge Functions, alteração de migrations
 ou políticas de RLS.
+
+## GitHub Pages: testar antes de integrar
+
+As alterações de publicação devem ficar na branch `frontendteste`. Não é
+necessário alterar a `main` para verificar o build.
+
+Dentro de `frontend/`, gere e abra a mesma versão que será usada no Pages:
+
+```bash
+npm run build -- --mode github-pages
+npm run preview -- --mode github-pages
+```
+
+Abra `http://localhost:4173/Challenge_GoodWe/` (ou a porta indicada pelo Vite).
+O modo `github-pages` configura o caminho `/Challenge_GoodWe/` dos arquivos
+CSS e JavaScript. `npm run dev` e o build comum continuam usando `/`.
+
+O workflow `.github/workflows/frontend-pages.yml`:
+
+- valida TypeScript e gera o build em pushes da `frontendteste` e em PRs para
+  `main`, sem publicar nessas situações;
+- disponibiliza o build como artefato `github-pages` na execução em **Actions**;
+- só publica quando executado na `main`, depois da revisão e integração;
+- não executa migrations, backend ou alterações de RLS.
+
+O Pages deste repositório tem um único endereço compartilhado. Uma branch não
+ganha um endereço de prévia independente automaticamente. Para testar online
+antes do merge sem substituir o site do grupo, é necessário um repositório
+separado ou outra hospedagem de prévia, acordada com o grupo.
+
+### Preparação para publicação pelo grupo
+
+1. Em **Settings → Secrets and variables → Actions → Variables**, cadastre as
+   duas *repository variables*: `VITE_SUPABASE_URL` e
+   `VITE_SUPABASE_PUBLISHABLE_KEY`. Use somente a chave `sb_publishable_...`.
+   O workflow não usa o `.env` local, que deve continuar fora do Git.
+2. Em **Settings → Pages → Build and deployment → Source**, selecione
+   **GitHub Actions**. O ambiente `github-pages` precisa permitir a `main`.
+3. Revise os testes na `frontendteste` e aprove o PR antes do merge. Só então
+   o workflow poderá publicar em
+   `https://fiap-workd.github.io/Challenge_GoodWe/`.
+4. Confira **Actions → Frontend - build e GitHub Pages**, o job `deploy` e
+   o endereço publicado. Para repetir depois da integração, use **Run workflow**
+   na `main`.
+
+Não execute em paralelo um workflow Jekyll para publicar este frontend: ele
+não compila React/Vite e pode substituir o site com outro conteúdo. Qualquer
+workflow de publicação existente deve ser revisado pelo grupo antes do merge.
+
+As variáveis `VITE_*` usadas no código do navegador ficam visíveis no build;
+nenhuma senha, secret key ou chave administrativa deve ser colocada nelas.
+Uma chave publicável não substitui as políticas de acesso do banco. Antes de
+expor o site na internet, a equipe de banco deve revisar RLS e dados acessíveis
+ao papel anônimo. Não remova RLS nem libere dados pessoais apenas para fazer
+o cadastro funcionar. Publicar a interface não resolve bloqueios de acesso.
+
+Se a interface mostrar falha de conexão, confira a URL atual no painel do
+Supabase e se o projeto está ativo. `ERR_NAME_NOT_RESOLVED` no navegador
+indica que o endereço não resolveu no DNS; isso não é um erro de RLS. Após
+corrigir as variáveis de publicação, gere e publique um novo build, pois o
+Vite incorpora a configuração durante a compilação.
+
+Referência: [Deploy de projetos Vite no GitHub Pages](https://vite.dev/guide/static-deploy.html#github-pages).
