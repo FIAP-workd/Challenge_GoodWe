@@ -27,8 +27,8 @@ jobs:
       run:
         working-directory: frontend
     env:
-      VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -40,13 +40,13 @@ jobs:
 
       - name: Conferir configuração pública do Supabase
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
             if [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-              echo "::error::Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY nas variables do repositório antes de publicar."
+              echo "::error::Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY nas variables do repositório antes de publicar."
               exit 1
             fi
             echo "::warning::Build de teste sem configuração do Supabase: exibirá a mensagem de configuração ausente."
-          elif [[ "$VITE_SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
+          elif [[ "$SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
             echo "::error::Use apenas uma chave sb_publishable_ destinada ao navegador."
             exit 1
           fi
