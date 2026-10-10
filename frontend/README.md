@@ -34,8 +34,8 @@ políticas de RLS.
 3. Copie `.env.example` para `.env` e preencha:
 
    ```env
-   VITE_SUPABASE_URL=
-   VITE_SUPABASE_PUBLISHABLE_KEY=
+   SUPABASE_URL=
+   SUPABASE_PUBLISHABLE_KEY=
    ```
 
    Use somente a chave publicável destinada ao navegador. Nunca coloque
@@ -141,8 +141,8 @@ separado ou outra hospedagem de prévia, acordada com o grupo.
 ### Preparação para publicação pelo grupo
 
 1. Em **Settings → Secrets and variables → Actions → Variables**, cadastre as
-   duas *repository variables*: `VITE_SUPABASE_URL` e
-   `VITE_SUPABASE_PUBLISHABLE_KEY`. Use somente a chave `sb_publishable_...`.
+   duas *repository variables*: `SUPABASE_URL` e
+   `SUPABASE_PUBLISHABLE_KEY`. Use somente a chave `sb_publishable_...`.
    O workflow não usa o `.env` local, que deve continuar fora do Git.
 2. Em **Settings → Pages → Build and deployment → Source**, selecione
    **GitHub Actions**. O ambiente `github-pages` precisa permitir a `main`.

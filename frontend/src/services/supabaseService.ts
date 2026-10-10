@@ -35,7 +35,7 @@ function throwDatabaseError(error: unknown): never {
     lowerMessage.includes("load failed")
   ) {
     throw new Error(
-      "Não foi possível conectar ao Supabase. Verifique a internet, VITE_SUPABASE_URL e se o projeto está ativo.",
+      "Não foi possível conectar ao Supabase. Verifique a internet, SUPABASE_URL e se o projeto está ativo.",
     );
   }
 
