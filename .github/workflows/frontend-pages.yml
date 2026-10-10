@@ -21,7 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  # PRs e branches de teste validam o build sem acessar os secrets de producao.
+  build-preview:
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,9 +31,6 @@ jobs:
     defaults:
       run:
         working-directory: frontend
-    env:
-      VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,14 +43,49 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Conferir configuração pública do Supabase
+      - name: Instalar dependências do frontend
+        run: npm ci
+
+      - name: Validar TypeScript e gerar build de teste para o Pages
+        run: npm run build -- --mode github-pages
+
+  # O build de produção e o deploy usam as variáveis do ambiente producao.
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: producao
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Conferir configuração do Supabase no ambiente producao
         run: |
           if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
-            if [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-              echo "::error::Configure a variável SUPABASE_URL e o secret SUPABASE_PUBLISHABLE_KEY nas configurações Actions do repositório antes de publicar."
-              exit 1
-            fi
-            echo "::warning::Build de teste sem configuração do Supabase: exibirá a mensagem de configuração ausente."
+            echo "::error::Configure SUPABASE_URL como variável e SUPABASE_PUBLISHABLE_KEY como secret no ambiente producao."
+            exit 1
           elif [[ "$VITE_SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
             echo "::error::Use apenas uma chave sb_publishable_ destinada ao navegador."
             exit 1
@@ -60,29 +94,14 @@ jobs:
       - name: Instalar dependências do frontend
         run: npm ci
 
-      - name: Validar TypeScript e gerar build para o Pages
+      - name: Gerar build de produção para o Pages
         run: npm run build -- --mode github-pages
 
-      - name: Guardar build para teste ou publicação
+      - name: Guardar build para publicação
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
 
-  # A branch de trabalho e os PRs nunca publicam no site compartilhado.
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    concurrency:
-      group: github-pages
-      cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Publicar frontend no Pages
         id: deployment
         uses: actions/deploy-pages@v4
