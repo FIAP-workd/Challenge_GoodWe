@@ -1,17 +1,27 @@
 import { useState } from "react";
 import { supabaseConfigError } from "./lib/supabase";
 import { CarregadoresPage } from "./pages/CarregadoresPage";
+import { RateioPage } from "./pages/RateioPage";
+import { SessoesPage } from "./pages/SessoesPage";
 import { TarifasPage } from "./pages/TarifasPage";
 import { UnidadesPage } from "./pages/UnidadesPage";
 import { UsuariosPage } from "./pages/UsuariosPage";
 
-type Page = "unidades" | "usuarios" | "carregadores" | "tarifas";
+type Page =
+  | "unidades"
+  | "usuarios"
+  | "carregadores"
+  | "tarifas"
+  | "sessoes"
+  | "rateio";
 
 const navigation: Array<{ id: Page; label: string }> = [
   { id: "unidades", label: "Unidades" },
   { id: "usuarios", label: "Usuários" },
   { id: "carregadores", label: "Carregadores" },
   { id: "tarifas", label: "Tarifas" },
+  { id: "sessoes", label: "Sessões" },
+  { id: "rateio", label: "Rateio e faturas" },
 ];
 
 function CurrentPage({ page }: { page: Page }) {
@@ -22,6 +32,10 @@ function CurrentPage({ page }: { page: Page }) {
       return <CarregadoresPage />;
     case "tarifas":
       return <TarifasPage />;
+    case "sessoes":
+      return <SessoesPage />;
+    case "rateio":
+      return <RateioPage />;
     default:
       return <UnidadesPage />;
   }
