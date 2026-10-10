@@ -1,18 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.SUPABASE_URL?.trim() ?? "";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
 const supabasePublishableKey =
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
 
 function validateSupabaseConfig(): string | null {
   const missingVariables: string[] = [];
 
   if (!supabaseUrl) {
-    missingVariables.push("SUPABASE_URL");
+    missingVariables.push("VITE_SUPABASE_URL");
   }
 
   if (!supabasePublishableKey) {
-    missingVariables.push("SUPABASE_PUBLISHABLE_KEY");
+    missingVariables.push("VITE_SUPABASE_PUBLISHABLE_KEY");
   }
 
   if (missingVariables.length > 0) {
@@ -23,10 +23,10 @@ function validateSupabaseConfig(): string | null {
     const parsedUrl = new URL(supabaseUrl);
 
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return "SUPABASE_URL precisa ser uma URL HTTP ou HTTPS válida.";
+      return "VITE_SUPABASE_URL precisa ser uma URL HTTP ou HTTPS válida.";
     }
   } catch {
-    return "SUPABASE_URL precisa ser uma URL válida.";
+    return "VITE_SUPABASE_URL precisa ser uma URL válida.";
   }
 
   return null;
