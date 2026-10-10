@@ -74,8 +74,8 @@ export default function App() {
             </p>
             <pre>
               <code>
-                VITE_SUPABASE_URL={"\n"}
-                VITE_SUPABASE_PUBLISHABLE_KEY=
+                SUPABASE_URL={"\n"}
+                SUPABASE_PUBLISHABLE_KEY=
               </code>
             </pre>
             <p className="configuration-note">
