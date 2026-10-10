@@ -1,0 +1,82 @@
+name: Frontend - build e GitHub Pages
+
+on:
+  push:
+    branches: [frontendteste, main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Conferir configuração pública do Supabase
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
+            if [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+              echo "::error::Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY nas variables do repositório antes de publicar."
+              exit 1
+            fi
+            echo "::warning::Build de teste sem configuração do Supabase: exibirá a mensagem de configuração ausente."
+          elif [[ "$VITE_SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* ]]; then
+            echo "::error::Use apenas uma chave sb_publishable_ destinada ao navegador."
+            exit 1
+          fi
+
+      - name: Instalar dependências do frontend
+        run: npm ci
+
+      - name: Validar TypeScript e gerar build para o Pages
+        run: npm run build -- --mode github-pages
+
+      - name: Guardar build para teste ou publicação
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  # A branch de trabalho e os PRs nunca publicam no site compartilhado.
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar frontend no Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
