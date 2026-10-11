@@ -50,7 +50,7 @@ function jsonResponse(body: unknown, status: number, origin: string | null) {
 }
 
 function isLocalUrl(url: string) {
-  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
+  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/.test(url);
 }
 
 async function hmacHex(secret: string, value: string): Promise<string> {
