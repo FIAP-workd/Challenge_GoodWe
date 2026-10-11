@@ -89,7 +89,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validateDate(value: unknown): string | null {
   if (value === null) return null;
-  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new Error("Data inválida.");
   }
   const parsed = new Date(value + "T00:00:00.000Z");
