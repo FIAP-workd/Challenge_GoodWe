@@ -53,7 +53,7 @@ Categorias de perguntas cobertas:
 
 Agregações financeiras e operacionais devem ser calculadas no banco por consultas fixas, com valores numéricos retornados para o modelo apresentar. O modelo não deve estimar totais a partir de uma amostra truncada.
 
-Campos sensíveis ficam fora do contexto da LLM, mesmo sendo dados de demonstração: `usuarios.senha`, `usuarios.rfid_uid), e qualquer segredo de autenticação. Nas consultas de usuário, retornar apenas os campos estritamente necessários à resposta; evitar email e telefone se nome, unidade e estado do cadastro forem suficientes.
+Campos sensíveis ficam fora do contexto da LLM, mesmo sendo dados de demonstração: `usuarios.senha`, `usuarios.rfid_uid`, e qualquer segredo de autenticação. Nas consultas de usuário, retornar apenas os campos estritamente necessários à resposta; evitar email e telefone se nome, unidade e estado do cadastro forem suficientes.
 
 Se a pergunta não puder ser respondida com as consultas disponíveis, o chat deve dizer isso claramente e não inventar dados. A resposta deve indicar o período ou os filtros usados quando forem relevantes e pode identificar as tabelas/views que sustentam a resposta.
 
