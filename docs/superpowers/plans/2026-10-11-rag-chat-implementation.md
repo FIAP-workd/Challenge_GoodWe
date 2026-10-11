@@ -40,8 +40,8 @@ O banco contém dados fictícios, mas o serviço será público. Por isso, a cha
 3. Criar cliente privilegiado com `SUPABASE_SECRET_KEYS['default']` fornecida pelo runtime Supabase; nunca copiar uma chave privilegiada para código, frontend ou Actions.
 4. Declarar ferramentas Groq por categoria. Validar estritamente argumentos, enumerações, datas, filtros e limites antes de chamar RPC; ignorar/rejeitar qualquer ferramenta desconhecida.
 5. Executar tool calling local por HTTP na API Groq. Usar `GROQ_API_KEY` como secret, `GROQ_MODEL` como configuração com padrão `openai/gpt-oss-20b`, timeout e limite de até quatro chamadas de ferramenta por pergunta.
-6. Limitar a pergunta a 1.000 caracteres, histórico a oito mensagens recentes, linhas por ferramenta a 25, contexto total e saída do modelo a limites explícitos. Limitar a taxa por IP a 10 chamadas por minuto e 100 por dia; usar o cabeçalho confiável `cf-connecting-ip` do gateway, persistir somente hash do identificador e contadores, nunca o IP bruto.
-7. Fazer o dispatcher selecionar somente colunas seguras. Para usuários, omitir senha, RFID, email e telefone salvo se uma resposta suportada exigir explicitamente algum dado de contato (a primeira versão não deve ter ferramenta para isso).
+6. Limitar a pergunta a 1.000 caracteres, histórico a oito mensagens recentes, linhas por ferramenta a 25, contexto total a 6.000 tokens e saída do modelo a 800 tokens. Limitar a taxa por IP a 10 chamadas por minuto e 100 por dia; usar o cabeçalho confiável `cf-connecting-ip` do gateway, persistir somente hash do identificador e contadores, nunca o IP bruto.
+7. Fazer o dispatcher selecionar somente colunas seguras. Para usuários, sempre omitir senha, RFID, email e telefone.
 8. Tratar erro de quota, timeout, falha de banco e resposta inválida sem expor dados internos. Não registrar pergunta, resposta, linhas recuperadas ou secrets em logs.
 
 ### 3. Integrar o chat no frontend
