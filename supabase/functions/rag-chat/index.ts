@@ -283,7 +283,12 @@ Deno.serve(async (request) => {
     if (!question || question.length > MAX_QUESTION_LENGTH) {
       return jsonResponse({ error: "A pergunta deve ter até 1.000 caracteres." }, 400, origin);
     }
-    const history = parseHistory("history" in body ? body.history : undefined);
+    let history: ChatMessage[];
+    try {
+      history = parseHistory("history" in body ? body.history : undefined);
+    } catch {
+      return jsonResponse({ error: "Histórico da conversa inválido." }, 400, origin);
+    }
 
     const ip = request.headers.get("cf-connecting-ip") ??
       (isLocalUrl(SUPABASE_URL) ? "local-development" : null);
