@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabaseConfigError } from "./lib/supabase";
 import { RagChat } from "./components/RagChat";
 import { CarregadoresPage } from "./pages/CarregadoresPage";
+import { GeradorPage } from "./pages/GeradorPage";
 import { RateioPage } from "./pages/RateioPage";
 import { SessoesPage } from "./pages/SessoesPage";
 import { TarifasPage } from "./pages/TarifasPage";
@@ -14,7 +15,8 @@ type Page =
   | "carregadores"
   | "tarifas"
   | "sessoes"
-  | "rateio";
+  | "rateio"
+  | "gerador";
 
 const navigation: Array<{ id: Page; label: string }> = [
   { id: "unidades", label: "Unidades" },
@@ -23,6 +25,7 @@ const navigation: Array<{ id: Page; label: string }> = [
   { id: "tarifas", label: "Tarifas" },
   { id: "sessoes", label: "Sessões" },
   { id: "rateio", label: "Rateio e faturas" },
+  { id: "gerador", label: "Gerador de dados" },
 ];
 
 function CurrentPage({ page }: { page: Page }) {
@@ -37,6 +40,8 @@ function CurrentPage({ page }: { page: Page }) {
       return <SessoesPage />;
     case "rateio":
       return <RateioPage />;
+    case "gerador":
+      return <GeradorPage />;
     default:
       return <UnidadesPage />;
   }
