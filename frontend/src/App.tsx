@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabaseConfigError } from "./lib/supabase";
+import { RagChat } from "./components/RagChat";
 import { CarregadoresPage } from "./pages/CarregadoresPage";
 import { RateioPage } from "./pages/RateioPage";
 import { SessoesPage } from "./pages/SessoesPage";
@@ -117,6 +118,7 @@ export default function App() {
 
             <CurrentPage page={currentPage} />
           </main>
+          <RagChat />
         </>
       )}
 
