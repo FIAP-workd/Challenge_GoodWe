@@ -154,7 +154,7 @@ begin
       from (
         select tarifa_id, descricao, valor_kwh, vigencia_inicio, vigencia_fim, ativo
         from public.tarifas
-        where (v_status is null or lower(ativo::text) = lower(v_status))
+        where (v_status is null or lower(ativo::text) = lower(v_status) or (lower(v_status) = 'ativo' and ativo) or (lower(v_status) = 'inativo' and not ativo))
           and (v_search is null or descricao ilike '%' || v_search || '%')
           and (p_start is null or vigencia_inicio >= p_start)
           and (p_end is null or vigencia_inicio <= p_end)
@@ -167,7 +167,7 @@ begin
         select regra_id, tarifa_id, descricao, tipo_tarifa, valor_fixo, percentual_taxa,
                vigencia_inicio, vigencia_fim, ativo
         from public.regras_rateio
-        where (v_status is null or lower(ativo::text) = lower(v_status))
+        where (v_status is null or lower(ativo::text) = lower(v_status) or (lower(v_status) = 'ativo' and ativo) or (lower(v_status) = 'inativo' and not ativo))
           and (v_search is null or concat_ws(' ', descricao, tipo_tarifa) ilike '%' || v_search || '%')
           and (p_start is null or vigencia_inicio >= p_start)
           and (p_end is null or vigencia_inicio <= p_end)
