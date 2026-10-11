@@ -1,4 +1,5 @@
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { askRagChat, type RagChatMessage } from "../services/ragChatService";
 import "./RagChat.css";
 
@@ -95,7 +96,7 @@ export function RagChat() {
   return (
     <div className="rag-chat">
       {open && (
-        <section className="rag-chat__panel" aria-label="Chat EV ChargeOPS">
+        <section id="rag-chat-panel" className="rag-chat__panel" aria-label="Chat EV ChargeOPS">
           <header className="rag-chat__header">
             <div>
               <p className="rag-chat__eyebrow">Assistente de dados</p>
