@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV ChargeOps · Gerador de Dados</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <style>
+    :root {
+      --accent: #22c55e;
+      --accent-amber: #f59e0b;
+      --bg: #0b1220;
+      --surface: #111a2c;
+      --surface-elevated: #162238;
+      --border: #1e2a44;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .app-header {
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #131f36 0%, #0b1220 100%);
+      padding: 1.5rem 0;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-weight: 600;
+    }
+    .badge-live::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .panel {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0;
+    }
+
+    .status-banner {
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .status-banner.connected {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+    .status-banner.demo {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fcd34d;
+    }
+
+    .chips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .chip {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .chip-name {
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.5px;
+    }
+    .chip-status {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .form-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .input-field, .select-field {
+      background: #090e18;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.45rem 0.65rem;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input-field:focus, .select-field:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-action {
+      background: #1f2d48;
+      color: #e2e8f0;
+      border: 1px solid #2d3f66;
+      border-radius: 6px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+    .btn-action:hover {
+      background: #283a5e;
+      border-color: #3b5282;
+      color: #fff;
+    }
+    .btn-action.primary {
+      background: #15803d;
+      border-color: #22c55e;
+      color: #ffffff;
+    }
+    .btn-action.primary:hover {
+      background: #16a34a;
+    }
+    .btn-action.accent-amber {
+      background: #b45309;
+      border-color: #f59e0b;
+      color: #ffffff;
+    }
+    .btn-action.accent-amber:hover {
+      background: #d97706;
+    }
+    .btn-action:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 380px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    .data-table th {
+      background: #131c2e;
+      color: var(--text-muted);
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(30, 42, 68, 0.5);
+      white-space: nowrap;
+    }
+    .data-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .origin-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .origin-gerador {
+      background: rgba(147, 51, 234, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(147, 51, 234, 0.4);
+    }
+    .origin-ao_vivo {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .origin-banco {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .kpi-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .kpi-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .kpi-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-val {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-top: 0.2rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-unit {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    /* Live simulator styles */
+    .sim-display {
+      background: #080d17;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+    .sparkline-canvas {
+      width: 100%;
+      height: 64px;
+      display: block;
+      margin-top: 0.75rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 6px;
+      border: 1px solid #1a253a;
+    }
+
+    /* Ratio bar styles */
+    .ratio-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 0.75rem;
+    }
+    .ratio-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+    .ratio-bar-bg {
+      height: 8px;
+      background: #19253d;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .ratio-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #10b981 100%);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      background: #111e33;
+      color: #f8fafc;
+      border: 1px solid #25395c;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideIn {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .collapsible-form {
+      background: var(--surface-elevated);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .collapsible-form.active {
+      display: block;
+    }
+
+    .sql-box {
+      background: #080d17;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: #93c5fd;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="shell-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <span style="font-size:1.5rem;">⚡</span>
+            <h1 style="margin:0; font-size:1.4rem; font-weight:800; letter-spacing:-0.5px;">EV ChargeOps · Gerador de Dados</h1>
+            <span class="badge-live">FIAP + GoodWe 2026</span>
+          </div>
+          <p style="margin:0.25rem 0 0 0; color:var(--text-muted); font-size:0.85rem;">
+            Challenge GoodWe + FIAP 2026 — popular a base Supabase e simular sessões de recarga ao vivo
+          </p>
+        </div>
+        <div id="conn-pill" class="badge-live" style="background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3);">
+          Modo Demo Local
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell-container" style="padding-top:1.5rem; padding-bottom:3rem;">
+
+    <!-- 1. CONEXÃO SUPABASE -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>🔌</span> 1. Conexão Supabase</h2>
+        <span style="font-size:0.75rem; color:var(--text-muted);">Persistência em localStorage</span>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns: 2fr 3fr auto;">
+        <div class="form-group">
+          <label for="sb-url">URL do Projeto</label>
+          <input id="sb-url" type="url" class="input-field" placeholder="https://xyzcompany.supabase.co">
+        </div>
+        <div class="form-group">
+          <label for="sb-key">Anon Key / API Key</label>
+          <input id="sb-key" type="password" class="input-field" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+          <button id="btn-test-conn" class="btn-action primary" style="height:36px;">
+            Testar Conexão
+          </button>
+        </div>
+      </div>
+
+      <div id="sb-banner" class="status-banner demo">
+        <span>⚡ <strong>Modo demonstração local:</strong> sem conexão direta. Dados mantidos em memória e exportáveis para SQL/JSON.</span>
+        <button id="btn-clear-cred" class="btn-action" style="padding:2px 8px; font-size:0.7rem;">Limpar credenciais</button>
+      </div>
+
+      <div class="chips-grid" id="tables-chips">
+        <div class="chip" data-tbl="unidades">
+          <span class="chip-name">unidades</span>
+          <span class="chip-status">⚪ não testado</span>
+        </div>
+        <div class="chip" data-tbl="usuarios">
+          <span class="chip-name">usuarios</span>
+          <span class="chip-status">⚪ não testado</span>
+        </div>
+        <div class="chip" data-tbl="carregadores">
+          <span class="chip-name">carregadores</span>
+          <span class="chip-status">⚪ não testado</span>
+        </div>
+        <div class="chip" data-tbl="tarifas">
+          <span class="chip-name">tarifas</span>
+          <span class="chip-status">⚪ não testado</span>
+        </div>
+        <div class="chip" data-tbl="sessoes">
+          <span class="chip-name">sessoes</span>
+          <span class="chip-status">⚪ não testado</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CLIENTES CADASTRADOS -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>👥</span> 2. Clientes Cadastrados</h2>
+        <button id="btn-toggle-client-form" class="btn-action primary">
+          ＋ Cadastrar Cliente
+        </button>
+      </div>
+
+      <!-- Formulário inline -->
+      <div id="client-form-panel" class="collapsible-form">
+        <h4 style="margin:0 0 0.75rem 0; font-size:0.9rem;">Novo Cliente EV</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="cli-nome">Nome Completo</label>
+            <input id="cli-nome" class="input-field" placeholder="Ex: Lucas Ferreira">
+          </div>
+          <div class="form-group">
+            <label for="cli-email">E-mail</label>
+            <input id="cli-email" type="email" class="input-field" placeholder="lucas@exemplo.com">
+          </div>
+          <div class="form-group">
+            <label for="cli-unidade">Unidade / Apto</label>
+            <input id="cli-unidade" class="input-field" placeholder="Ex: Bloco B - Apto 402">
+          </div>
+          <div class="form-group">
+            <label for="cli-veiculo">Veículo Elétrico</label>
+            <input id="cli-veiculo" class="input-field" placeholder="Ex: BYD Dolphin Mini">
+          </div>
+          <div class="form-group">
+            <label for="cli-placa">Placa</label>
+            <input id="cli-placa" class="input-field" placeholder="ABC-1D23">
+          </div>
+        </div>
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+          <button id="btn-cancel-client" class="btn-action">Cancelar</button>
+          <button id="btn-save-client" class="btn-action primary">Salvar Cliente</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table" id="clients-table">
+          <thead>
+            <tr>
+              <th>ID / Ref</th>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Unidade</th>
+              <th>Veículo</th>
+              <th>Placa</th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody">
+            <!-- preenchido dinamicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. GERADOR DE SESSÕES EM LOTE -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>⚙️</span> 3. Gerador de Sessões (População da Base)</h2>
+        <span style="font-size:0.75rem; color:var(--text-muted);">Algoritmo com curvas de carga realistas</span>
+      </div>
+
+      <div class="form-grid" style="margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="gen-days">Período (dias)</label>
+          <input id="gen-days" type="number" class="input-field" value="30" min="1" max="90">
+        </div>
+        <div class="form-group">
+          <label for="gen-min-sess">Sessões/Dia (Min)</label>
+          <input id="gen-min-sess" type="number" class="input-field" value="1" min="0" max="20">
+        </div>
+        <div class="form-group">
+          <label for="gen-max-sess">Sessões/Dia (Máx)</label>
+          <input id="gen-max-sess" type="number" class="input-field" value="5" min="1" max="30">
+        </div>
+        <div class="form-group">
+          <label for="gen-charger">Carregador</label>
+          <select id="gen-charger" class="select-field"></select>
+        </div>
+        <div class="form-group">
+          <label for="gen-tariff">Tarifa (R$/kWh)</label>
+          <input id="gen-tariff" type="number" step="0.01" class="input-field" value="0.92">
+        </div>
+        <div class="form-group">
+          <label for="gen-seed">Semente Opcional</label>
+          <input id="gen-seed" type="number" class="input-field" placeholder="Ex: 2026">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+        <button id="btn-generate-preview" class="btn-action primary">
+          <span>⚡ Gerar Prévia</span>
+        </button>
+
+        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;" id="export-actions">
+          <button id="btn-insert-supabase" class="btn-action accent-amber" disabled>
+            ▶ Inserir no Supabase
+          </button>
+          <button id="btn-download-sql" class="btn-action" disabled>
+            ⬇ Baixar SQL
+          </button>
+          <button id="btn-download-json" class="btn-action" disabled>
+            ⬇ Baixar JSON
+          </button>
+          <button id="btn-download-csv" class="btn-action" disabled>
+            ⬇ Baixar CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Estatísticas da Prévia -->
+      <div class="kpi-board" id="gen-kpis" style="display:none;">
+        <div class="kpi-card">
+          <span class="kpi-title">Sessões Geradas</span>
+          <div class="kpi-val" id="stat-count">0</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Energia Total</span>
+          <div class="kpi-val"><span id="stat-kwh">0</span> <span class="kpi-unit">kWh</span></div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Custo Total</span>
+          <div class="kpi-val" id="stat-cost">R$ 0,00</div>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Média / Sessão</span>
+          <div class="kpi-val"><span id="stat-avg">0</span> <span class="kpi-unit">kWh</span></div>
+        </div>
+      </div>
+
+      <!-- SQL fallback box (RLS warning) -->
+      <div id="rls-fallback" style="display:none; margin-bottom:1rem;">
+        <div class="status-banner" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5;">
+          <span>⚠️ <strong>Escrita bloqueada (RLS ativo):</strong> anon key sem permissão de INSERT em 'sessoes'. Copie o SQL abaixo e rode no SQL Editor do Supabase:</span>
+        </div>
+        <div class="sql-box" id="rls-sql-code"></div>
+      </div>
+
+      <!-- Prévia em Tabela -->
+      <div class="table-container" id="preview-table-wrap" style="display:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Início</th>
+              <th>Cliente</th>
+              <th>Carregador</th>
+              <th>Duração</th>
+              <th>Energia</th>
+              <th>Custo</th>
+            </tr>
+          </thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. SIMULAÇÃO AO VIVO -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>🔴</span> 4. Simulação de Sessão Ao Vivo</h2>
+        <span class="badge-live" id="live-indicator" style="display:none;">Recarga em Andamento</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="sim-client">Cliente (Obrigatório)</label>
+          <select id="sim-client" class="select-field">
+            <option value="">Selecione um cliente...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="sim-charger">Carregador</label>
+          <select id="sim-charger" class="select-field"></select>
+        </div>
+        <div class="form-group">
+          <label for="sim-power">Potência Nominal (kW)</label>
+          <input id="sim-power" type="number" step="0.1" class="input-field" value="7.4">
+        </div>
+        <div class="form-group">
+          <label for="sim-tariff">Tarifa (R$/kWh)</label>
+          <input id="sim-tariff" type="number" step="0.01" class="input-field" value="0.92">
+        </div>
+        <div class="form-group">
+          <label for="sim-speed">Velocidade</label>
+          <select id="sim-speed" class="select-field">
+            <option value="1">1x (Tempo real)</option>
+            <option value="60" selected>60x (1 seg = 1 min)</option>
+            <option value="300">300x (1 seg = 5 min)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sim-display">
+        <div class="kpi-board" style="margin-bottom:0.5rem;">
+          <div class="kpi-card">
+            <span class="kpi-title">⏱ Duração</span>
+            <div class="kpi-val" id="live-time">00:00:00</div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">🔌 Potência Instantânea</span>
+            <div class="kpi-val"><span id="live-power">0.0</span> <span class="kpi-unit">kW</span></div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">⚡ Energia Acumulada</span>
+            <div class="kpi-val"><span id="live-kwh">0,00</span> <span class="kpi-unit">kWh</span></div>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">💰 Custo Estimado</span>
+            <div class="kpi-val" id="live-cost">R$ 0,00</div>
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between; margin-top:0.5rem;">
+          <span>Curva Instantânea de Potência (kW com oscilação ±5%)</span>
+          <span id="live-flow-info">Status: Parado</span>
+        </div>
+        <canvas id="sparkline-canvas" class="sparkline-canvas" width="600" height="70"></canvas>
+
+        <div style="display:flex; gap:0.5rem; margin-top:1rem; justify-content:flex-end;">
+          <button id="btn-sim-start" class="btn-action primary">Iniciar Recarga</button>
+          <button id="btn-sim-pause" class="btn-action" disabled>Pausar</button>
+          <button id="btn-sim-stop" class="btn-action accent-amber" disabled>Encerrar e Gravar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. RATEIO - PRÉVIA -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>📊</span> 5. Rateio · Prévia de Distribuição</h2>
+        <span style="font-size:0.75rem; color:var(--text-muted);">Consolidado de todas as sessões em memória</span>
+      </div>
+
+      <p style="font-size:0.8rem; color:var(--text-muted); margin:0 0 1rem 0;">
+        Prévia simples para validar o modelo de rateio definido pelo grupo na sprint 01. Soma sessões carregadas do banco + geradas + simuladas.
+      </p>
+
+      <div id="ratio-container">
+        <!-- preenchido dinamicamente -->
+      </div>
+    </section>
+
+    <!-- 6. HISTÓRICO DE SESSÕES -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><span>📜</span> 6. Histórico de Sessões Recentes</h2>
+        <span style="font-size:0.75rem; color:var(--text-muted);" id="hist-count-label">20 mais recentes</span>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Origem</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Cliente / Unidade</th>
+              <th>Carregador</th>
+              <th>Duração</th>
+              <th>kWh</th>
+              <th>Custo</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell-footer" style="border-top:1px solid var(--border); padding:1.5rem 0; text-align:center; font-size:0.8rem; color:var(--text-muted);">
+    <div class="shell-container">
+      EV ChargeOps · Challenge GoodWe + FIAP · Gerador de dados para popular a base — usa a anon key do projeto, sem autenticação
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script>
+    // Estado Global da Aplicação
+    const state = {
+      isConnected: false,
+      supabaseUrl: '',
+      supabaseKey: '',
+      detectedColumns: {
+        unidades: [],
+        usuarios: [],
+        carregadores: [],
+        tarifas: [],
+        sessoes: []
+      },
+      unidades: [
+        { id: '1', identificador: 'Bloco A - Apto 101', descricao: 'Torre Solar' },
+        { id: '2', identificador: 'Bloco A - Apto 204', descricao: 'Torre Solar' },
+        { id: '3', identificador: 'Bloco B - Apto 302', descricao: 'Torre Vento' },
+        { id: '4', identificador: 'Bloco B - Apto 501', descricao: 'Torre Vento' }
+      ],
+      usuarios: [
+        { id: 'u1', nome: 'Beatriz Almeida', email: 'beatriz.almeida@exemplo.com', unidade: 'Bloco A - Apto 101', veiculo: 'BYD Dolphin', placa: 'EVB-2024' },
+        { id: 'u2', nome: 'Carlos Eduardo', email: 'carlos.edu@exemplo.com', unidade: 'Bloco A - Apto 204', veiculo: 'Volvo EX30', placa: 'GWE-4040' },
+        { id: 'u3', nome: 'Mariana Silva', email: 'mariana.s@exemplo.com', unidade: 'Bloco B - Apto 302', veiculo: 'GWM Ora 03', placa: 'FIA-2026' },
+        { id: 'u4', nome: 'Rodrigo Antunes', email: 'rodrigo.a@exemplo.com', unidade: 'Bloco B - Apto 501', veiculo: 'BMW i4', placa: 'OPS-7788' },
+        { id: 'u5', nome: 'Fernanda Lima', email: 'fernanda.l@exemplo.com', unidade: 'Bloco A - Apto 101', veiculo: 'Renault Kwid E-Tech', placa: 'KWD-1234' },
+        { id: 'u6', nome: 'Guilherme Prado', email: 'guilherme.p@exemplo.com', unidade: 'Bloco B - Apto 302', veiculo: 'Nissan Leaf', placa: 'ECO-9988' }
+      ],
+      carregadores: [
+        { id: 'c1', nome: 'GoodWe HCA G2 · Vaga 01', potencia_kw: 7.4 },
+        { id: 'c2', nome: 'GoodWe HCA G2 · Vaga 02', potencia_kw: 11.0 }
+      ],
+      tarifas: [
+        { id: 't1', descricao: 'Ponta / Cheia', valor_kwh: 0.92 }
+      ],
+      generatedSessions: [],
+      historySessions: [],
+      // Simulação ao vivo
+      live: {
+        timer: null,
+        status: 'stopped', // 'stopped', 'running', 'paused'
+        elapsedSec: 0,
+        energyKwh: 0,
+        cost: 0,
+        basePower: 7.4,
+        instantPower: 0,
+        tariff: 0.92,
+        startTime: null,
+        client: null,
+        charger: null,
+        sparkPoints: []
+      }
+    };
+
+    // Formatadores
+    const fmt = {
+      brl: val => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0),
+      num: (val, dec = 2) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(val || 0),
+      date: iso => {
+        if (!iso) return '-';
+        const d = new Date(iso);
+        return isNaN(d) ? iso : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      },
+      timeSec: sec => {
+        const s = Math.floor(sec % 60);
+        const m = Math.floor((sec / 60) % 60);
+        const h = Math.floor(sec / 3600);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+    };
+
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast';
+      const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+      t.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(10px)';
+        t.style.transition = 'all 0.3s ease';
+        setTimeout(() => t.remove(), 300);
+      }, 3500);
+    }
+
+    // Inicialização da Página
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStorageCredentials();
+      populateInitialSelects();
+      renderClientsTable();
+      initSparkline();
+      bindEvents();
+      createMockInitialHistory();
+      renderHistoryTable();
+      renderRatioPreview();
+    });
+
+    function loadStorageCredentials() {
+      const savedUrl = localStorage.getItem('ev_sb_url');
+      const savedKey = localStorage.getItem('ev_sb_key');
+      if (savedUrl) document.getElementById('sb-url').value = savedUrl;
+      if (savedKey) document.getElementById('sb-key').value = savedKey;
+      if (savedUrl && savedKey) {
+        testSupabaseConnection(false);
+      }
+    }
+
+    function bindEvents() {
+      // Conexão Supabase
+      document.getElementById('btn-test-conn').addEventListener('click', () => testSupabaseConnection(true));
+      document.getElementById('btn-clear-cred').addEventListener('click', clearCredentials);
+
+      // Clientes
+      const form = document.getElementById('client-form-panel');
+      document.getElementById('btn-toggle-client-form').addEventListener('click', () => {
+        form.classList.toggle('active');
+      });
+      document.getElementById('btn-cancel-client').addEventListener('click', () => {
+        form.classList.remove('active');
+      });
+      document.getElementById('btn-save-client').addEventListener('click', handleSaveClient);
+
+      // Gerador
+      document.getElementById('btn-generate-preview').addEventListener('click', generateSessionsPreview);
+      document.getElementById('btn-insert-supabase').addEventListener('click', insertGeneratedIntoSupabase);
+      document.getElementById('btn-download-sql').addEventListener('click', downloadSQL);
+      document.getElementById('btn-download-json').addEventListener('click', downloadJSON);
+      document.getElementById('btn-download-csv').addEventListener('click', downloadCSV);
+
+      // Simulação
+      document.getElementById('btn-sim-start').addEventListener('click', startSimulation);
+      document.getElementById('btn-sim-pause').addEventListener('click', pauseSimulation);
+      document.getElementById('btn-sim-stop').addEventListener('click', stopSimulation);
+    }
+
+    // 1. SUPABASE CONNECTION & PROBING
+    async function testSupabaseConnection(notify = true) {
+      const url = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
+      const key = document.getElementById('sb-key').value.trim();
+
+      if (!url || !key) {
+        if (notify) showToast('Preencha a URL do Supabase e a Anon Key.', 'error');
+        return;
+      }
+
+      localStorage.setItem('ev_sb_url', url);
+      localStorage.setItem('ev_sb_key', key);
+      state.supabaseUrl = url;
+      state.supabaseKey = key;
+
+      const tables = ['unidades', 'usuarios', 'carregadores', 'tarifas', 'sessoes'];
+      let successfulTables = 0;
+
+      for (const tbl of tables) {
+        const chip = document.querySelector(`.chip[data-tbl="${tbl}"] .chip-status`);
+        chip.innerHTML = '⏳ testando...';
+        chip.style.color = '#94a3b8';
+
+        try {
+          const resp = await fetch(`${url}/rest/v1/${tbl}?select=*&limit=1`, {
+            method: 'GET',
+            headers: {
+              'apikey': key,
+              'Authorization': `Bearer ${key}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!resp.ok) {
+            chip.innerHTML = `❌ erro (${resp.status})`;
+            chip.style.color = '#f87171';
+            continue;
+          }
+
+          const data = await resp.json();
+          successfulTables++;
+
+          if (Array.isArray(data) && data.length > 0) {
+            chip.innerHTML = `✅ ${data.length} reg.`;
+            chip.style.color = '#4ade80';
+            // Salva chaves reais da primeira linha para mapeamento dinâmico
+            state.detectedColumns[tbl] = Object.keys(data[0]);
+          } else {
+            chip.innerHTML = '⚠️ vazia';
+            chip.style.color = '#fbbf24';
+          }
+        } catch (err) {
+          chip.innerHTML = '❌ conexão falhou';
+          chip.style.color = '#f87171';
+        }
+      }
+
+      const banner = document.getElementById('sb-banner');
+      const connPill = document.getElementById('conn-pill');
+
+      if (successfulTables > 0) {
+        state.isConnected = true;
+        banner.className = 'status-banner connected';
+        banner.innerHTML = `<span>✅ <strong>Conectado ao Supabase:</strong> ${successfulTables}/${tables.length} tabelas acessíveis via REST API anon.</span>`;
+        connPill.textContent = 'Conectado · Supabase';
+        connPill.style.background = 'rgba(34, 197, 94, 0.2)';
+        connPill.style.color = '#4ade80';
+        connPill.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+        if (notify) showToast('Conexão ao Supabase estabelecida com sucesso!', 'success');
+        // Carregar clientes do banco se possível
+        fetchSupabaseUsers();
+      } else {
+        state.isConnected = false;
+        banner.className = 'status-banner demo';
+        banner.innerHTML = `<span>⚡ <strong>Modo demonstração local:</strong> não foi possível ler as tabelas. Verifique a URL e se RLS permite leitura anônima.</span>`;
+        connPill.textContent = 'Modo Demo Local';
+        connPill.style.background = 'rgba(245, 158, 11, 0.15)';
+        connPill.style.color = '#fbbf24';
+        connPill.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        if (notify) showToast('Não foi possível conectar ao Supabase. Operando em memória.', 'info');
+      }
+    }
+
+    function clearCredentials() {
+      localStorage.removeItem('ev_sb_url');
+      localStorage.removeItem('ev_sb_key');
+      document.getElementById('sb-url').value = '';
+      document.getElementById('sb-key').value = '';
+      state.isConnected = false;
+      const banner = document.getElementById('sb-banner');
+      banner.className = 'status-banner demo';
+      banner.innerHTML = `<span>⚡ <strong>Modo demonstração local:</strong> sem conexão direta. Dados mantidos em memória.</span>`;
+      const connPill = document.getElementById('conn-pill');
+      connPill.textContent = 'Modo Demo Local';
+      document.querySelectorAll('.chip-status').forEach(c => {
+        c.innerHTML = '⚪ limpo';
+        c.style.color = '#94a3b8';
+      });
+      showToast('Credenciais removidas.', 'info');
+    }
+
+    async function fetchSupabaseUsers() {
+      if (!state.isConnected) return;
+      try {
+        const resp = await fetch(`${state.supabaseUrl}/rest/v1/usuarios?select=*`, {
+          headers: {
+            'apikey': state.supabaseKey,
+            'Authorization': `Bearer ${state.supabaseKey}`
+          }
+        });
+        if (resp.ok) {
+          const list = await resp.json();
+          if (Array.isArray(list) && list.length > 0) {
+            // Mapeia colunas encontradas
+            state.usuarios = list.map((item, idx) => {
+              const findKey = rx => Object.keys(item).find(k => rx.test(k));
+              const kNome = findKey(/nome|name/i) || 'nome';
+              const kEmail = findKey(/email|mail/i) || 'email';
+              const kUnidade = findKey(/unidade|unit|apto/i) || 'unidade';
+              const kVeiculo = findKey(/veiculo|carro|modelo/i) || 'veiculo';
+              const kPlaca = findKey(/placa|plate/i) || 'placa';
+              return {
+                id: item.id || `u_sb_${idx}`,
+                nome: item[kNome] || 'Cliente Sem Nome',
+                email: item[kEmail] || '-',
+                unidade: item[kUnidade] || 'Unidade Principal',
+                veiculo: item[kVeiculo] || 'EV Genérico',
+                placa: item[kPlaca] || '---'
+              };
+            });
+            renderClientsTable();
+            populateInitialSelects();
+            showToast(`${list.length} clientes carregados do Supabase!`, 'success');
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar usuários:', e);
+      }
+    }
+
+    // 2. CLIENTES
+    function renderClientsTable() {
+      const tbody = document.getElementById('clients-tbody');
+      tbody.innerHTML = '';
+      state.usuarios.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color:var(--text-muted); font-family:monospace; font-size:0.75rem;">${u.id}</td>
+          <td style="font-weight:600;">${escapeHtml(u.nome)}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td><span style="background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px;">${escapeHtml(u.unidade)}</span></td>
+          <td>${escapeHtml(u.veiculo)}</td>
+          <td style="font-family:monospace; color:#38bdf8;">${escapeHtml(u.placa)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      populateInitialSelects();
+    }
+
+    async function handleSaveClient() {
+      const nome = document.getElementById('cli-nome').value.trim();
+      const email = document.getElementById('cli-email').value.trim();
+      const unidade = document.getElementById('cli-unidade').value.trim();
+      const veiculo = document.getElementById('cli-veiculo').value.trim();
+      const placa = document.getElementById('cli-placa').value.trim();
+
+      if (!nome) {
+        showToast('O nome do cliente é obrigatório.', 'error');
+        return;
+      }
+
+      const newClient = {
+        id: 'u' + (state.usuarios.length + 1),
+        nome,
+        email: email || `${nome.toLowerCase().replace(/\s+/g, '.')}@exemplo.com`,
+        unidade: unidade || 'Bloco Geral',
+        veiculo: veiculo || 'Veículo Elétrico',
+        placa: placa || 'BRA-2E19'
+      };
+
+      if (state.isConnected) {
+        // Enviar para Supabase com mapeamento
+        const cols = state.detectedColumns.usuarios;
+        const findCol = rx => cols.find(c => rx.test(c));
+        const payload = {};
+
+        const cNome = findCol(/nome|name/i) || 'nome';
+        const cEmail = findCol(/email/i) || 'email';
+        const cUnidade = findCol(/unidade/i) || 'unidade';
+        const cVeiculo = findCol(/veiculo|carro|modelo/i) || 'veiculo';
+        const cPlaca = findCol(/placa|plate/i) || 'placa';
+
+        payload[cNome] = newClient.nome;
+        if (cEmail) payload[cEmail] = newClient.email;
+        if (cUnidade) payload[cUnidade] = newClient.unidade;
+        if (cVeiculo) payload[cVeiculo] = newClient.veiculo;
+        if (cPlaca) payload[cPlaca] = newClient.placa;
+
+        try {
+          const resp = await fetch(`${state.supabaseUrl}/rest/v1/usuarios`, {
+            method: 'POST',
+            headers: {
+              'apikey': state.supabaseKey,
+              'Authorization': `Bearer ${state.supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!resp.ok) {
+            const err = await resp.text();
+            showToast(`Falha no Supabase: ${err.slice(0, 70)}... Salvo em memória.`, 'info');
+          } else {
+            showToast('Cliente gravado no Supabase com sucesso!', 'success');
+          }
+        } catch (e) {
+          showToast('Erro ao salvar no banco. Guardado localmente.', 'info');
+        }
+      } else {
+        showToast('Cliente adicionado à lista local (modo demonstração)!', 'success');
+      }
+
+      state.usuarios.push(newClient);
+      renderClientsTable();
+      renderRatioPreview();
+
+      // Limpar campos
+      document.getElementById('cli-nome').value = '';
+      document.getElementById('cli-email').value = '';
+      document.getElementById('cli-unidade').value = '';
+      document.getElementById('cli-veiculo').value = '';
+      document.getElementById('cli-placa').value = '';
+      document.getElementById('client-form-panel').classList.remove('active');
+    }
+
+    function populateInitialSelects() {
+      // Carregadores
+      const genCharger = document.getElementById('gen-charger');
+      const simCharger = document.getElementById('sim-charger');
+      genCharger.innerHTML = '';
+      simCharger.innerHTML = '';
+
+      state.carregadores.forEach(c => {
+        const opt1 = new Option(`${c.nome} (${c.potencia_kw} kW)`, c.id);
+        const opt2 = new Option(`${c.nome} (${c.potencia_kw} kW)`, c.id);
+        genCharger.appendChild(opt1);
+        simCharger.appendChild(opt2);
+      });
+
+      // Clientes para a simulação
+      const simClient = document.getElementById('sim-client');
+      simClient.innerHTML = '<option value="">Selecione um cliente...</option>';
+      state.usuarios.forEach(u => {
+        const opt = new Option(`${u.nome} (${u.unidade} - ${u.veiculo})`, u.id);
+        simClient.appendChild(opt);
+      });
+    }
+
+    // 3. GERADOR DE SESSÕES
+    function generateSessionsPreview() {
+      const days = parseInt(document.getElementById('gen-days').value) || 30;
+      const minSess = parseInt(document.getElementById('gen-min-sess').value) || 1;
+      const maxSess = parseInt(document.getElementById('gen-max-sess').value) || 5;
+      const tariff = parseFloat(document.getElementById('gen-tariff').value) || 0.92;
+      const chargerId = document.getElementById('gen-charger').value;
+      const charger = state.carregadores.find(c => c.id === chargerId) || state.carregadores[0];
+      const seedVal = document.getElementById('gen-seed').value;
+
+      let pseudoRandom = Math.random;
+      if (seedVal) {
+        let s = parseInt(seedVal) || 12345;
+        pseudoRandom = () => {
+          s = (s * 9301 + 49297) % 233280;
+          return s / 233280;
+        };
+      }
+
+      if (state.usuarios.length === 0) {
+        showToast('Cadastre clientes antes de gerar sessões.', 'error');
+        return;
+      }
+
+      const generated = [];
+      const now = new Date();
+
+      for (let d = days; d >= 1; d--) {
+        const dayDate = new Date(now.getTime() - d * 24 * 3600 * 1000);
+        const sessionsToday = Math.floor(pseudoRandom() * (maxSess - minSess + 1)) + minSess;
+
+        for (let s = 0; s < sessionsToday; s++) {
+          // Distribuição de horários:
+          // 30% manhã (7h-10h), 50% fim de tarde/noite (17h-22h), 20% outros
+          const randSlot = pseudoRandom();
+          let hour, minute;
+          if (randSlot < 0.3) {
+            hour = 7 + Math.floor(pseudoRandom() * 4);
+          } else if (randSlot < 0.8) {
+            hour = 17 + Math.floor(pseudoRandom() * 6);
+          } else {
+            hour = Math.floor(pseudoRandom() * 24);
+          }
+          minute = Math.floor(pseudoRandom() * 60);
+
+          const startDt = new Date(dayDate);
+          startDt.setHours(hour, minute, 0, 0);
+
+          // Duração entre 25 e 180 min
+          const durMin = Math.floor(pseudoRandom() * (180 - 25 + 1)) + 25;
+          const endDt = new Date(startDt.getTime() + durMin * 60 * 1000);
+
+          // Seleciona usuário
+          const userIdx = Math.floor(pseudoRandom() * state.usuarios.length);
+          const user = state.usuarios[userIdx];
+
+          // Fator eficiência 0.88 - 0.96
+          const eff = 0.88 + pseudoRandom() * (0.96 - 0.88);
+          let energyKwh = charger.potencia_kw * (durMin / 60) * eff;
+          if (energyKwh > 80) energyKwh = 80; // cap 80 kWh
+          energyKwh = Math.round(energyKwh * 100) / 100;
+
+          const cost = Math.round(energyKwh * tariff * 100) / 100;
+
+          generated.push({
+            id: 'sess_gen_' + (generated.length + 1),
+            usuario_id: user.id,
+            usuario_nome: user.nome,
+            usuario_unidade: user.unidade,
+            carregador_id: charger.id,
+            carregador_nome: charger.nome,
+            inicio: startDt.toISOString(),
+            fim: endDt.toISOString(),
+            duracao_min: durMin,
+            energia_kwh: energyKwh,
+            custo: cost,
+            tarifa: tariff,
+            status: 'concluida',
+            origem: 'gerador'
+          });
+        }
+      }
+
+      state.generatedSessions = generated;
+
+      // Habilitar botões
+      document.getElementById('btn-insert-supabase').disabled = false;
+      document.getElementById('btn-download-sql').disabled = false;
+      document.getElementById('btn-download-json').disabled = false;
+      document.getElementById('btn-download-csv').disabled = false;
+
+      // Atualizar estatísticas
+      const totalCount = generated.length;
+      const totalKwh = generated.reduce((acc, cur) => acc + cur.energia_kwh, 0);
+      const totalCost = generated.reduce((acc, cur) => acc + cur.custo, 0);
+      const avgKwh = totalCount > 0 ? (totalKwh / totalCount) : 0;
+
+      document.getElementById('stat-count').textContent = totalCount;
+      document.getElementById('stat-kwh').textContent = fmt.num(totalKwh);
+      document.getElementById('stat-cost').textContent = fmt.brl(totalCost);
+      document.getElementById('stat-avg').textContent = fmt.num(avgKwh);
+      document.getElementById('gen-kpis').style.display = 'grid';
+
+      // Renderizar tabela de prévia (primeiras 15 linhas)
+      const tbody = document.getElementById('preview-tbody');
+      tbody.innerHTML = '';
+      generated.slice(0, 15).forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${fmt.date(s.inicio).split(' ')[0]}</td>
+          <td>${fmt.date(s.inicio).split(' ')[1] || '-'}</td>
+          <td><strong>${escapeHtml(s.usuario_nome)}</strong> <span style="font-size:0.75rem; color:var(--text-muted);">(${escapeHtml(s.usuario_unidade)})</span></td>
+          <td>${escapeHtml(s.carregador_nome)}</td>
+          <td>${s.duracao_min} min</td>
+          <td style="color:#4ade80; font-weight:700;">${fmt.num(s.energia_kwh)} kWh</td>
+          <td style="color:#fbbf24; font-weight:700;">${fmt.brl(s.custo)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('preview-table-wrap').style.display = 'block';
+      showToast(`Prévia gerada: ${totalCount} sessões criadas!`, 'success');
+    }
+
+    // Inserção em Lote no Supabase
+    async function insertGeneratedIntoSupabase() {
+      if (!state.generatedSessions.length) return;
+
+      if (!state.isConnected) {
+        showToast('Supabase não conectado. Gravando na memória local.', 'info');
+        pushToHistoryAndRecalc(state.generatedSessions);
+        return;
+      }
+
+      // Preparar lote
+      const cols = state.detectedColumns.sessoes;
+      const payload = state.generatedSessions.map(s => {
+        const row = {
+          inicio: s.inicio,
+          fim: s.fim,
+          duracao_min: s.duracao_min,
+          energia_kwh: s.energia_kwh,
+          custo: s.custo,
+          status: s.status,
+          origem: s.origem
+        };
+        // Auto mapeia identificador do usuário ou carregador se existirem
+        if (cols.includes('usuario_id')) row.usuario_id = s.usuario_id;
+        if (cols.includes('carregador_id')) row.carregador_id = s.carregador_id;
+        if (cols.includes('tarifa_kwh')) row.tarifa_kwh = s.tarifa;
+        return row;
+      });
+
+      try {
+        const resp = await fetch(`${state.supabaseUrl}/rest/v1/sessoes`, {
+          method: 'POST',
+          headers: {
+            'apikey': state.supabaseKey,
+            'Authorization': `Bearer ${state.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (resp.ok) {
+          showToast(`Sucesso! ${payload.length} sessões inseridas no Supabase!`, 'success');
+          pushToHistoryAndRecalc(state.generatedSessions);
+        } else {
+          const errText = await resp.text();
+          document.getElementById('rls-fallback').style.display = 'block';
+          document.getElementById('rls-sql-code').textContent = generateSQLText(state.generatedSessions.slice(0, 10));
+          showToast('Permissão de escrita recusada (RLS). Use a exportação SQL.', 'error');
+          // Salva local para demonstração visual
+          pushToHistoryAndRecalc(state.generatedSessions);
+        }
+      } catch (err) {
+        showToast('Erro de rede ao enviar para Supabase. Dados salvos localmente.', 'info');
+        pushToHistoryAndRecalc(state.generatedSessions);
+      }
+    }
+
+    function pushToHistoryAndRecalc(newSessions) {
+      state.historySessions = [...newSessions, ...state.historySessions];
+      renderHistoryTable();
+      renderRatioPreview();
+    }
+
+    // Exportações de Arquivo
+    function generateSQLText(sessions) {
+      const rows = sessions || state.generatedSessions;
+      let sql = `-- EV ChargeOps · Challenge GoodWe + FIAP 2026\n-- Dados de Sessões geradas em lote (${rows.length} registros)\n\n`;
+      sql += `INSERT INTO sessoes (inicio, fim, duracao_min, energia_kwh, custo, status, origem)\nVALUES\n`;
+      const values = rows.map(s => {
+        return `  ('${s.inicio}', '${s.fim}', ${s.duracao_min}, ${s.energia_kwh}, ${s.custo}, '${s.status}', '${s.origem}')`;
+      }).join(',\n');
+      return sql + values + ';\n';
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSQL() {
+      if (!state.generatedSessions.length) return;
+      downloadFile(generateSQLText(), 'ev_sessoes_chargeops.sql', 'text/sql');
+      showToast('Arquivo SQL baixado com sucesso!', 'success');
+    }
+
+    function downloadJSON() {
+      if (!state.generatedSessions.length) return;
+      const json = JSON.stringify(state.generatedSessions, null, 2);
+      downloadFile(json, 'ev_sessoes_chargeops.json', 'application/json');
+      showToast('Arquivo JSON baixado com sucesso!', 'success');
+    }
+
+    function downloadCSV() {
+      if (!state.generatedSessions.length) return;
+      const headers = ['id', 'inicio', 'fim', 'duracao_min', 'cliente', 'unidade', 'carregador', 'energia_kwh', 'custo', 'tarifa', 'status', 'origem'];
+      const lines = state.generatedSessions.map(s => [
+        s.id,
+        s.inicio,
+        s.fim,
+        s.duracao_min,
+        `"${s.usuario_nome.replace(/"/g, '""')}"`,
+        `"${s.usuario_unidade.replace(/"/g, '""')}"`,
+        `"${s.carregador_nome.replace(/"/g, '""')}"`,
+        s.energia_kwh,
+        s.custo,
+        s.tarifa,
+        s.status,
+        s.origem
+      ].join(';'));
+      const csv = '\uFEFF' + [headers.join(';'), ...lines].join('\n');
+      downloadFile(csv, 'ev_sessoes_chargeops.csv', 'text/csv;charset=utf-8;');
+      showToast('Arquivo CSV baixado com sucesso!', 'success');
+    }
+
+    // 4. SIMULAÇÃO AO VIVO
+    function startSimulation() {
+      const clientId = document.getElementById('sim-client').value;
+      if (!clientId) {
+        showToast('Selecione um cliente para iniciar a sessão ao vivo!', 'error');
+        return;
+      }
+
+      const client = state.usuarios.find(u => u.id === clientId);
+      const chargerId = document.getElementById('sim-charger').value;
+      const charger = state.carregadores.find(c => c.id === chargerId) || state.carregadores[0];
+      const basePower = parseFloat(document.getElementById('sim-power').value) || 7.4;
+      const tariff = parseFloat(document.getElementById('sim-tariff').value) || 0.92;
+
+      if (state.live.status === 'paused') {
+        state.live.status = 'running';
+      } else {
+        state.live.status = 'running';
+        state.live.elapsedSec = 0;
+        state.live.energyKwh = 0;
+        state.live.cost = 0;
+        state.live.basePower = basePower;
+        state.live.tariff = tariff;
+        state.live.startTime = new Date();
+        state.live.client = client;
+        state.live.charger = charger;
+        state.live.sparkPoints = [basePower];
+      }
+
+      document.getElementById('btn-sim-start').disabled = true;
+      document.getElementById('btn-sim-pause').disabled = false;
+      document.getElementById('btn-sim-stop').disabled = false;
+      document.getElementById('sim-client').disabled = true;
+      document.getElementById('live-indicator').style.display = 'inline-flex';
+      document.getElementById('live-flow-info').textContent = `Carregando: ${client.nome} (${client.veiculo})`;
+
+      clearInterval(state.live.timer);
+      state.live.timer = setInterval(simTick, 1000);
+      showToast('Sessão ao vivo iniciada! Transmissão de telemetria ativa.', 'success');
+    }
+
+    function simTick() {
+      if (state.live.status !== 'running') return;
+
+      const speed = parseInt(document.getElementById('sim-speed').value) || 60;
+      state.live.elapsedSec += speed;
+
+      // Potência com variação realista ±5%
+      const jitter = (Math.random() * 0.1 - 0.05);
+      const instantKw = Math.max(0.5, state.live.basePower * (1 + jitter));
+      state.live.instantPower = instantKw;
+
+      // Energia acumulada no tick: (instantKw * speed / 3600) * eficiência 0.94
+      const addedKwh = (instantKw * (speed / 3600)) * 0.94;
+      state.live.energyKwh += addedKwh;
+      state.live.cost = state.live.energyKwh * state.live.tariff;
+
+      // Sparkline buffer (últimos 30 pontos)
+      state.live.sparkPoints.push(instantKw);
+      if (state.live.sparkPoints.length > 35) state.live.sparkPoints.shift();
+
+      // UI update
+      document.getElementById('live-time').textContent = fmt.timeSec(state.live.elapsedSec);
+      document.getElementById('live-power').textContent = instantKw.toFixed(2);
+      document.getElementById('live-kwh').textContent = fmt.num(state.live.energyKwh, 3);
+      document.getElementById('live-cost').textContent = fmt.brl(state.live.cost);
+
+      drawSparkline();
+    }
+
+    function pauseSimulation() {
+      if (state.live.status === 'running') {
+        state.live.status = 'paused';
+        clearInterval(state.live.timer);
+        document.getElementById('btn-sim-start').disabled = false;
+        document.getElementById('btn-sim-start').textContent = 'Retomar';
+        document.getElementById('btn-sim-pause').disabled = true;
+        document.getElementById('live-flow-info').textContent = 'Status: Pausado';
+        showToast('Sessão pausada.', 'info');
+      }
+    }
+
+    async function stopSimulation() {
+      clearInterval(state.live.timer);
+      state.live.status = 'stopped';
+
+      const endTime = new Date();
+      const durMin = Math.max(1, Math.round(state.live.elapsedSec / 60));
+      const finalKwh = Math.round(state.live.energyKwh * 100) / 100;
+      const finalCost = Math.round(state.live.cost * 100) / 100;
+
+      const sessionObj = {
+        id: 'sess_live_' + Date.now(),
+        usuario_id: state.live.client.id,
+        usuario_nome: state.live.client.nome,
+        usuario_unidade: state.live.client.unidade,
+        carregador_id: state.live.charger.id,
+        carregador_nome: state.live.charger.nome,
+        inicio: state.live.startTime.toISOString(),
+        fim: endTime.toISOString(),
+        duracao_min: durMin,
+        energia_kwh: finalKwh,
+        custo: finalCost,
+        status: 'concluida',
+        origem: 'ao_vivo'
+      };
+
+      // Reset controls
+      document.getElementById('btn-sim-start').disabled = false;
+      document.getElementById('btn-sim-start').textContent = 'Iniciar Recarga';
+      document.getElementById('btn-sim-pause').disabled = true;
+      document.getElementById('btn-sim-stop').disabled = true;
+      document.getElementById('sim-client').disabled = false;
+      document.getElementById('live-indicator').style.display = 'none';
+      document.getElementById('live-flow-info').textContent = 'Status: Encerrado';
+      document.getElementById('live-power').textContent = '0.0';
+
+      // Envia ao Supabase se conectado
+      if (state.isConnected) {
+        try {
+          const resp = await fetch(`${state.supabaseUrl}/rest/v1/sessoes`, {
+            method: 'POST',
+            headers: {
+              'apikey': state.supabaseKey,
+              'Authorization': `Bearer ${state.supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              inicio: sessionObj.inicio,
+              fim: sessionObj.fim,
+              duracao_min: sessionObj.duracao_min,
+              energia_kwh: sessionObj.energia_kwh,
+              custo: sessionObj.custo,
+              status: sessionObj.status,
+              origem: sessionObj.origem
+            })
+          });
+          if (resp.ok) {
+            showToast('Sessão registrada no Supabase com sucesso! ✅', 'success');
+          } else {
+            showToast('Sessão salva no histórico local (RLS ou sem permissão de escrita).', 'info');
+          }
+        } catch (e) {
+          showToast('Sessão salva no histórico local.', 'info');
+        }
+      } else {
+        showToast('Sessão registrada com sucesso no histórico! ✅', 'success');
+      }
+
+      pushToHistoryAndRecalc([sessionObj]);
+    }
+
+    // Sparkline Canvas
+    function initSparkline() {
+      drawSparkline();
+    }
+
+    function drawSparkline() {
+      const canvas = document.getElementById('sparkline-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid sutil
+      ctx.strokeStyle = '#1e2a44';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      const pts = state.live.sparkPoints;
+      if (!pts || pts.length < 2) return;
+
+      const maxVal = Math.max(12, Math.max(...pts) * 1.15);
+      const minVal = 0;
+
+      ctx.beginPath();
+      const step = w / (pts.length - 1);
+      pts.forEach((p, idx) => {
+        const x = idx * step;
+        const y = h - ((p - minVal) / (maxVal - minVal)) * (h - 10) - 5;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Gradiente sob a linha
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(34, 197, 94, 0.25)');
+      grad.addColorStop(1, 'rgba(34, 197, 94, 0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // 5. RATEIO - PRÉVIA
+    function renderRatioPreview() {
+      const container = document.getElementById('ratio-container');
+      container.innerHTML = '';
+
+      const all = state.historySessions;
+      if (all.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:0.85rem; padding:0.5rem 0;">Nenhuma sessão computada para o rateio ainda.</div>`;
+        return;
+      }
+
+      // Agrupar por usuário/unidade
+      const agg = {};
+      let totalKwhGlobal = 0;
+      let totalCostGlobal = 0;
+
+      all.forEach(s => {
+        const key = s.usuario_nome || 'Cliente Não Identificado';
+        if (!agg[key]) {
+          agg[key] = {
+            nome: key,
+            unidade: s.usuario_unidade || '-',
+            kwh: 0,
+            custo: 0,
+            count: 0
+          };
+        }
+        agg[key].kwh += s.energia_kwh;
+        agg[key].custo += s.custo;
+        agg[key].count++;
+        totalKwhGlobal += s.energia_kwh;
+        totalCostGlobal += s.custo;
+      });
+
+      const list = Object.values(agg).sort((a, b) => b.kwh - a.kwh);
+
+      list.forEach(item => {
+        const pct = totalKwhGlobal > 0 ? ((item.kwh / totalKwhGlobal) * 100) : 0;
+        const el = document.createElement('div');
+        el.className = 'ratio-item';
+        el.innerHTML = `
+          <div class="ratio-info">
+            <div>
+              <strong>${escapeHtml(item.nome)}</strong> 
+              <span style="color:var(--text-muted); font-size:0.75rem;">(${escapeHtml(item.unidade)}) · ${item.count} recargas</span>
+            </div>
+            <div style="font-variant-numeric: tabular-nums;">
+              <span style="color:#4ade80; font-weight:700;">${fmt.num(item.kwh)} kWh</span>
+              <span style="color:var(--text-muted); margin:0 4px;">|</span>
+              <span style="color:#fbbf24; font-weight:700;">${fmt.brl(item.custo)}</span>
+              <span style="color:var(--text-muted); font-size:0.75rem; margin-left:6px;">(${pct.toFixed(1)}%)</span>
+            </div>
+          </div>
+          <div class="ratio-bar-bg">
+            <div class="ratio-bar-fill" style="width: ${pct.toFixed(1)}%;"></div>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // 6. HISTÓRICO DE SESSÕES
+    function createMockInitialHistory() {
+      // 5 sessões realistas iniciais para o demo
+      const baseTime = Date.now();
+      const mock = [
+        {
+          id: 'sess_init_1',
+          usuario_id: 'u1',
+          usuario_nome: 'Beatriz Almeida',
+          usuario_unidade: 'Bloco A - Apto 101',
+          carregador_id: 'c1',
+          carregador_nome: 'GoodWe HCA G2 · Vaga 01',
+          inicio: new Date(baseTime - 3600 * 1000 * 48).toISOString(),
+          fim: new Date(baseTime - 3600 * 1000 * 46).toISOString(),
+          duracao_min: 120,
+          energia_kwh: 14.8,
+          custo: 13.62,
+          status: 'concluida',
+          origem: 'banco'
+        },
+        {
+          id: 'sess_init_2',
+          usuario_id: 'u2',
+          usuario_nome: 'Carlos Eduardo',
+          usuario_unidade: 'Bloco A - Apto 204',
+          carregador_id: 'c2',
+          carregador_nome: 'GoodWe HCA G2 · Vaga 02',
+          inicio: new Date(baseTime - 3600 * 1000 * 24).toISOString(),
+          fim: new Date(baseTime - 3600 * 1000 * 22).toISOString(),
+          duracao_min: 95,
+          energia_kwh: 16.5,
+          custo: 15.18,
+          status: 'concluida',
+          origem: 'banco'
+        },
+        {
+          id: 'sess_init_3',
+          usuario_id: 'u3',
+          usuario_nome: 'Mariana Silva',
+          usuario_unidade: 'Bloco B - Apto 302',
+          carregador_id: 'c1',
+          carregador_nome: 'GoodWe HCA G2 · Vaga 01',
+          inicio: new Date(baseTime - 3600 * 1000 * 12).toISOString(),
+          fim: new Date(baseTime - 3600 * 1000 * 10).toISOString(),
+          duracao_min: 60,
+          energia_kwh: 7.1,
+          custo: 6.53,
+          status: 'concluida',
+          origem: 'gerador'
+        }
+      ];
+      state.historySessions = mock;
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('history-tbody');
+      tbody.innerHTML = '';
+
+      const top20 = state.historySessions.slice(0, 20);
+      document.getElementById('hist-count-label').textContent = `${top20.length} mais recentes (${state.historySessions.length} total)`;
+
+      top20.forEach(s => {
+        const tr = document.createElement('tr');
+        const originClass = s.origem === 'ao_vivo' ? 'origin-ao_vivo' : s.origem === 'gerador' ? 'origin-gerador' : 'origin-banco';
+        const originLabel = s.origem === 'ao_vivo' ? 'Ao Vivo' : s.origem === 'gerador' ? 'Gerador' : 'Banco';
+
+        tr.innerHTML = `
+          <td><span class="origin-badge ${originClass}">${originLabel}</span></td>
+          <td>${fmt.date(s.inicio)}</td>
+          <td>${fmt.date(s.fim)}</td>
+          <td><strong>${escapeHtml(s.usuario_nome)}</strong> <span style="font-size:0.75rem; color:var(--text-muted);">(${escapeHtml(s.usuario_unidade)})</span></td>
+          <td>${escapeHtml(s.carregador_nome)}</td>
+          <td>${s.duracao_min} min</td>
+          <td style="color:#4ade80; font-weight:700;">${fmt.num(s.energia_kwh)} kWh</td>
+          <td style="color:#fbbf24; font-weight:700;">${fmt.brl(s.custo)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>
