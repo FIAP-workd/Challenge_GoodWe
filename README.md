@@ -1066,3 +1066,7 @@ Kaggle. Electric Vehicle Charging Dataset. Disponível em: https://www.kaggle.co
 UCI Machine Learning Repository. Individual Household Electric Power Consumption. Disponível em: https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption. Acesso em: 19 jun. 2026.
 
 UCI Machine Learning Repository. Steel Industry Energy Consumption. Disponível em: https://archive.ics.uci.edu/dataset/851/steel+industry+energy+consumption. Acesso em: 19 jun. 2026.
+
+## Chat RAG do EV ChargeOPS
+
+O frontend inclui um chat que consulta os dados do Supabase por uma Edge Function e usa a API Groq. Para configurar secrets, aplicar a migration e publicar a função, consulte [o guia do chat RAG](docs/rag-chat-setup.md).

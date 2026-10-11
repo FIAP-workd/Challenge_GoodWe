@@ -1,7 +1,7 @@
 # Especificação de design: chat RAG para EV ChargeOPS
 
 - **Data:** 2026-10-11
-- **Status:** Proposta aprovada em arquitetura; aguardando revisão desta especificação
+- **Status:** Aprovada pelo usuário em 2026-10-11
 - **Repositório:** `FIAP-workd/Challenge_GoodWe`
 
 ## 1. Objetivo

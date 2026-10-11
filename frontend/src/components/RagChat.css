@@ -1,0 +1,263 @@
+.rag-chat {
+  position: fixed;
+  z-index: 1100;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.rag-chat__panel {
+  display: flex;
+  width: min(390px, calc(100vw - 28px));
+  height: min(600px, calc(100dvh - 110px));
+  min-height: 360px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d4e0d8;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(16, 44, 33, 0.22);
+}
+
+.rag-chat__header {
+  display: flex;
+  min-height: 74px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e4ebe6;
+  background: #102c21;
+  padding: 14px 16px;
+  color: #ffffff;
+}
+
+.rag-chat__header h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.rag-chat__eyebrow {
+  margin: 0 0 3px;
+  color: #bed4c8;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rag-chat__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rag-chat__icon-button {
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  padding: 5px 8px;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rag-chat__icon-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.rag-chat__messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 16px 14px;
+  overscroll-behavior: contain;
+}
+
+.rag-chat__message {
+  width: fit-content;
+  max-width: 88%;
+  border: 1px solid #e1e9e4;
+  border-radius: 14px 14px 14px 4px;
+  background: #f4f7f5;
+  padding: 11px 13px;
+  color: #24362c;
+  font-size: 0.87rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.rag-chat__message p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.rag-chat__message--user {
+  align-self: flex-end;
+  border-color: #c5e2d1;
+  border-radius: 14px 14px 4px 14px;
+  background: #e8f5ee;
+}
+
+.rag-chat__sources {
+  display: block;
+  margin-top: 8px;
+  color: #66736c;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.rag-chat__pending,
+.rag-chat__error {
+  align-self: flex-start;
+  margin: 0;
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.rag-chat__pending {
+  background: #f2f6f3;
+  color: #53645a;
+}
+
+.rag-chat__error {
+  border: 1px solid #efc3bf;
+  background: #fff0ef;
+  color: #a83b34;
+}
+
+.rag-chat__suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.rag-chat__suggestions button {
+  border: 1px solid #cbded2;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 8px 11px;
+  color: #20583d;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.rag-chat__suggestions button:hover {
+  background: #e8f5ee;
+}
+
+.rag-chat__form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border-top: 1px solid #e4ebe6;
+  padding: 12px;
+}
+
+.rag-chat__form textarea {
+  min-width: 0;
+  min-height: 44px;
+  max-height: 100px;
+  flex: 1;
+  resize: vertical;
+  border: 1px solid #bdcdc3;
+  border-radius: 10px;
+  outline: none;
+  padding: 10px 11px;
+  color: #17211c;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.rag-chat__form textarea:focus {
+  border-color: #186847;
+  box-shadow: 0 0 0 3px rgba(24, 104, 71, 0.12);
+}
+
+.rag-chat__send {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #186847;
+  padding: 0 13px;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.rag-chat__send:hover:not(:disabled) {
+  background: #0f4c34;
+}
+
+.rag-chat__note {
+  margin: -5px 12px 10px;
+  color: #66736c;
+  font-size: 0.67rem;
+  text-align: center;
+}
+
+.rag-chat__launcher {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #186847;
+  padding: 0 18px;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(16, 44, 33, 0.24);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.rag-chat__launcher:hover {
+  background: #0f4c34;
+}
+
+.rag-chat__launcher span:first-child {
+  font-size: 1.1rem;
+}
+
+.rag-chat button:focus-visible {
+  outline: 3px solid #d96b36;
+  outline-offset: 3px;
+}
+
+.rag-chat__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .rag-chat {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .rag-chat__panel {
+    width: calc(100vw - 24px);
+    height: min(620px, calc(100dvh - 92px));
+  }
+
+  .rag-chat__launcher {
+    min-height: 48px;
+  }
+}
