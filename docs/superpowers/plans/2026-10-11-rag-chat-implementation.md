@@ -1,7 +1,7 @@
 # Plano de implementação: chat RAG do EV ChargeOPS
 
 - **Data:** 2026-10-11
-- **Status:** Aguardando aprovação do plano
+- **Status:** Aprovado pelo usuário em 2026-10-11; implementação em andamento
 - **Especificação aprovada:** [2026-10-11-rag-chat-design.md](../specs/2026-10-11-rag-chat-design.md)
 
 ## Resumo
