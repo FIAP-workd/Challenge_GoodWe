@@ -97,7 +97,7 @@ begin
         from public.usuarios u
         left join public.unidades un on un.unidade_id = u.unidade_id
         where (v_search is null or u.nome ilike '%' || v_search || '%')
-          and (v_status is null or lower(u.ativo::text) = lower(v_status))
+          and (v_status is null or lower(u.ativo::text) = lower(v_status) or (lower(v_status) = 'ativo' and u.ativo) or (lower(v_status) = 'inativo' and not u.ativo))
         order by u.nome
         limit v_limit
       ) r;
