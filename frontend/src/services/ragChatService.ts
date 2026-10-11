@@ -22,6 +22,24 @@ function isRagChatResult(value: unknown): value is RagChatResult {
   );
 }
 
+async function readFunctionError(error: { context?: unknown }): Promise<string | null> {
+  if (!(error.context instanceof Response)) return null;
+  try {
+    const payload: unknown = await error.context.json();
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "error" in payload &&
+      typeof payload.error === "string"
+    ) {
+      return payload.error;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export async function askRagChat(
   question: string,
   history: RagChatMessage[],
@@ -35,25 +53,10 @@ export async function askRagChat(
   });
 
   if (error) {
-    const context = error.context;
-    if (context instanceof Response) {
-      try {
-        const payload: unknown = await context.json();
-        if (
-          typeof payload === "object" &&
-          payload !== null &&
-          "error" in payload &&
-          typeof payload.error === "string"
-        ) {
-          throw new Error(payload.error);
-        }
-      } catch (responseError) {
-        if (responseError instanceof Error && responseError.message !== "Unexpected end of JSON input") {
-          throw responseError;
-        }
-      }
-    }
-    throw new Error("Não foi possível conectar ao chat. Tente novamente.");
+    const functionError = await readFunctionError(error);
+    throw new Error(
+      functionError ?? "Não foi possível conectar ao chat. Tente novamente.",
+    );
   }
 
   if (!isRagChatResult(data)) {
