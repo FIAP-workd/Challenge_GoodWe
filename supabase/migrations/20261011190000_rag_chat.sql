@@ -120,7 +120,7 @@ begin
         from public.sessoes s
         join public.usuarios u on u.usuario_id = s.usuario_id
         join public.carregadores c on c.charger_id = s.charger_id
-        where (v_start is null or s.inicio::date >= p_start)
+        where (p_start is null or s.inicio::date >= p_start)
           and (p_end is null or s.inicio < (p_end + 1)::timestamptz)
           and (v_status is null or lower(s.status) = lower(v_status))
           and (v_search is null or concat_ws(' ', u.nome, c.localizacao, s.status, s.motivo_fim) ilike '%' || v_search || '%')
