@@ -1031,6 +1031,109 @@ Usuário / Gestor
 Ao final da Sprint 02, o EV ChargeOps deverá ser capaz de transformar sessões de carregamento em dados estruturados, gerar cobranças individualizadas e fornecer inteligência operacional para gestores e usuários.
 
 
+# Sprint 02 — Solução implementada
+
+Esta seção documenta o protótipo funcional desenvolvido na Sprint 02 a partir do plano acima. As seções anteriores permanecem como registro da Sprint 01.
+
+## Descrição da solução
+
+O EV ChargeOps implementado registra sessões de recarga, calcula o consumo individual por usuário, aplica o modelo de rateio (energia × tarifa do kWh + taxa administrativa) e gera as faturas. Um chat com IA (LLM + RAG) consulta os dados do banco e responde perguntas de usuários e gestores em linguagem natural.
+
+| Componente | Tecnologia | Localização |
+| --- | --- | --- |
+| Banco de dados | PostgreSQL (Supabase) | `supabase/migrations/` |
+| Interface web (cadastros, sessões, rateio e faturas, gerador de dados) | React + TypeScript + Vite | `frontend/` |
+| Motor de rateio | TypeScript (funções puras) e views SQL (`vw_consumo_mensal`, `vw_calculo_fatura`) | `frontend/src/lib/rateio.ts`, `supabase/migrations/` |
+| Simulador de sessões | Gerador de dados na própria interface, com semente reprodutível | `frontend/src/pages/GeradorPage.tsx` |
+| Módulo de IA (chat LLM + RAG) | Edge Function do Supabase + API Groq | `supabase/functions/rag-chat/` |
+| Publicação | GitHub Pages (frontend) e GitHub Actions (build e migrations) | `.github/workflows/` |
+
+### Lógica central
+
+- **Registro de sessões:** a tabela `sessoes` guarda início, fim, energia entregue (kWh), status e motivo de encerramento, associando cada sessão a um usuário e a um carregador.
+- **Consumo individual:** as sessões cobráveis (`finalizada` e `interrompida`) são agrupadas por usuário e a energia é somada.
+- **Rateio:** `valor final = (energia × tarifa do kWh) + taxa administrativa`, onde a taxa é composta por um valor fixo mais um percentual sobre a energia, conforme a regra vigente em `regras_rateio`.
+- **Casos especiais:** sessão interrompida cobra apenas a energia entregue; usuário sem consumo não gera cobrança; sessões de vários veículos do mesmo usuário entram na mesma fatura, pois o agrupamento é por usuário.
+
+### Módulo de inteligência artificial — assistente conversacional
+
+O módulo de IA é um chat assistente (LLM + RAG), disponível em todas as telas do frontend, que ajuda usuários e gestores a consultar os dados da plataforma sem navegar pelas tabelas. Ele implementa a "Interface Conversacional" definida na Sprint 01 e faz parte do fluxo principal: cada resposta é montada a partir de dados reais do banco (sessões, consumo, tarifas, carregadores e faturas), e não de texto genérico.
+
+**O que o assistente responde**
+
+O usuário escreve a pergunta em português e recebe uma resposta curta. Exemplos disponíveis como sugestões na interface:
+
+- "Qual foi o consumo por mês?"
+- "Quais carregadores estão com falha?"
+- "Qual o total faturado por referência?"
+
+**Como funciona**
+
+1. O frontend envia a pergunta e as últimas mensagens da conversa para a Edge Function `rag-chat`.
+2. A função envia a pergunta ao modelo (API Groq) junto com as instruções do assistente.
+3. O modelo escolhe uma de duas ferramentas somente leitura: `buscar_registros` (listagens filtradas por período, status ou texto) ou `resumo_operacional_financeiro` (totais, médias e tendências).
+4. As ferramentas chamam funções SQL do banco, que retornam apenas categorias permitidas e um número limitado de linhas.
+5. O modelo redige a resposta com os dados recebidos, informa o período e os filtros usados e cita as fontes consultadas.
+
+**Salvaguardas**
+
+- O assistente não gera nem executa SQL: só usa as duas ferramentas acima.
+- Se os dados forem insuficientes, ele informa isso em vez de inventar valores, e sugere um filtro menor.
+- Senha, RFID, e-mail e telefone não fazem parte das ferramentas e nunca são retornados.
+- Registros do banco são tratados como dados, não como instruções, o que reduz o risco de injeção de prompt.
+- Há limite de tamanho da pergunta, de histórico e de chamadas por IP. A conversa fica apenas em memória e some ao recarregar a página.
+
+**Limitação atual:** como o protótipo ainda não tem login, o chat consulta os dados de toda a base e não filtra por usuário (por exemplo, "meu consumo"). Essa personalização depende de autenticação, prevista como evolução.
+
+Detalhes de configuração e limites estão em [docs/rag-chat-setup.md](docs/rag-chat-setup.md).
+
+
+## Instruções de execução
+
+Pré-requisitos: Node.js 20.19 ou superior, npm e um projeto Supabase (ou o Supabase CLI para execução local).
+
+1. **Banco de dados:** aplique as migrations de `supabase/migrations/` em ordem (`supabase migration up` ou `npm run db:migrate` na raiz, com a stack local iniciada por `npm run supabase:start`).
+2. **Frontend:**
+
+   ```bash
+   cd frontend
+   npm install
+   cp .env.example .env   # preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY
+   npm run dev
+   ```
+
+   Abra o endereço indicado pelo Vite (normalmente `http://localhost:5173`). Use somente a chave publicável do Supabase.
+3. **Dados de demonstração:** cadastre unidades, usuários, um carregador e uma tarifa; em seguida use a página "Gerador de dados" para criar sessões simuladas e a página "Rateio e faturas" para calcular os valores.
+4. **Chat RAG:** siga o passo a passo de [docs/rag-chat-setup.md](docs/rag-chat-setup.md) (secrets `GROQ_API_KEY`, migration e deploy da função `rag-chat`).
+
+Mais detalhes do frontend estão em [frontend/README.md](frontend/README.md).
+
+## Decisões técnicas
+
+- **Supabase em vez de FastAPI + PostgreSQL próprio:** o Supabase entrega PostgreSQL gerenciado, API automática e Edge Functions, o que reduziu o tempo gasto com infraestrutura e permitiu concentrar o esforço no rateio e na IA.
+- **React em vez de Streamlit:** o front em React permitiu separar telas de usuário e gestor e publicar o protótipo no GitHub Pages.
+- **Motor de rateio como funções puras:** o cálculo recebe números e devolve números, sem acesso a banco ou tela, o que facilita testes e uma futura migração para o backend.
+- **IA somente leitura e com ferramentas restritas:** o chat não gera SQL livre; isso reduz o risco de vazamento de dados e de comandos indevidos. Há limite de chamadas por IP e a chave da Groq fica apenas no runtime do Supabase.
+- **Simulador no lugar de integração real:** os dados do carregador HCA G2 são simulados (potência, energia, status e eventos), conforme previsto na Fase 2 do plano.
+
+## Desvios em relação à Sprint 01
+
+| Item planejado | Situação | Justificativa |
+| --- | --- | --- |
+| FastAPI como backend | Substituído por Supabase (API automática e Edge Functions) | Menos infraestrutura para manter dentro do prazo do protótipo. |
+| Streamlit como interface | Substituído por React + Vite | Maior controle de navegação e publicação em GitHub Pages. |
+| Deploy em Render ou Railway | Substituído por GitHub Pages (frontend) e Supabase (banco e função) | Hospedagem gratuita e integrada ao repositório. |
+| Integração real com SEMS ou RS-485/Modbus | Não implementada; uso de simulador | Não houve acesso ao carregador físico durante o desenvolvimento. |
+| Autenticação via RFID | Não implementada; o campo `rfid_uid` existe no schema | Depende da integração real com o carregador. |
+| Tabela `veiculos` | Prevista no schema, mas comentada na migration | Não foi necessária para o fluxo de rateio, que agrupa por usuário. |
+| Isolation Forest, regressão e K-Means | Não implementados; o módulo de IA entregue é o chat LLM + RAG | Prioridade dada à interface conversacional integrada ao banco. |
+| Dashboard de métricas (gestor e usuário) | Implementado de forma parcial, nas telas de sessões, rateio e faturas e no resumo do chat | Visualizações gráficas ficam para evolução futura. |
+| Testes unitários e de integração (Fase 7) | Validação manual e build do TypeScript | Testes automatizados não foram escritos nesta sprint. |
+
+## Evidências de funcionamento
+
+As capturas de tela do teste do sistema (cadastros, sessões, rateio, faturas e chat) estão em [funcionamento/FUNCIONAMENTO.md](funcionamento/FUNCIONAMENTO.md).
+
 # Conclusão
 
 A análise dos dados públicos demonstrou que o mercado de veículos elétricos no Brasil vem apresentando crescimento acelerado nos últimos anos, impulsionado por fatores como a evolução tecnológica dos veículos, ampliação da oferta de modelos e redução dos custos de utilização. Paralelamente, a infraestrutura de recarga também tem crescido de forma significativa, embora ainda exista uma distribuição desigual dos eletropostos entre os estados brasileiros.
