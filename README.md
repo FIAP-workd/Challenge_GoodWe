@@ -4,7 +4,7 @@ Nome | RM
 ---|--
 Luis Gustavo Ribeiro Andrade | 569147
 João Victor Viana Feitosa | 573217
-Kaio Abreu Briegas | 572792
+Matheus de Carvalho Teodoro | 572855
 Pedro César Fernandes de Brito | 573965
 Gabriel Coutinho Barcelos | 573211
 
